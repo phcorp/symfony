@@ -173,7 +173,7 @@ final class CodeExtension extends AbstractExtension
 
         return $this->formatFileExcerpt(
             array_map(
-                static fn (string $line): string => self::fixCodeMarkup($line),
+                self::fixCodeMarkup(...),
                 $this->extractExcerptLines($lines, $line, $srcContext),
             ),
             $line,
