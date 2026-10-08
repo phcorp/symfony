@@ -11,12 +11,13 @@
 
 namespace Symfony\Bridge\Doctrine\Form;
 
-use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping\FieldMapping;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Persistence\Mapping\MappingException;
+use Symfony\Bridge\Doctrine\Form\Type\EntityIdentifierType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\EntityExists;
-use Symfony\Component\Form\ChoiceList\Loader\CallbackChoiceLoader;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormTypeGuesserInterface;
 use Symfony\Component\Form\Guess\Guess;
 use Symfony\Component\Form\Guess\TypeGuess;
@@ -29,13 +30,20 @@ if (!interface_exists(FormTypeGuesserInterface::class)) {
 }
 
 /**
- * Guesses a choice field for properties constrained with {@see EntityExists}.
+ * Guesses an {@see EntityIdentifierType} for the properties constrained with {@see EntityExists}.
  *
- * The choices are the values of the looked up field, so that the model data
- * stays the scalar the constraint validates, not the entity.
+ * Only lookups by a single scalar identifier are guessed: listing the values of
+ * another field, such as an email or a code, would disclose them.
  */
 final class EntityExistsTypeGuesser implements FormTypeGuesserInterface
 {
+    private const IDENTIFIER_TYPES = [Types::INTEGER, Types::SMALLINT, Types::BIGINT, Types::STRING, Types::ASCII_STRING, Types::GUID, 'uuid', 'ulid'];
+
+    /**
+     * @var array<string, array{0: EntityExists, 1: \ReflectionType|null}|false>
+     */
+    private array $cache = [];
+
     public function __construct(
         private ManagerRegistry $registry,
         private MetadataFactoryInterface $metadataFactory,
@@ -44,51 +52,24 @@ final class EntityExistsTypeGuesser implements FormTypeGuesserInterface
 
     public function guessType(string $class, string $property): ?TypeGuess
     {
-        if (!$constraint = $this->getConstraint($class, $property)) {
+        if (!$guessable = $this->getGuessable($class, $property)) {
             return null;
         }
 
-        // a custom repository method cannot be turned into a list of values
-        if ($constraint->repositoryMethod) {
-            return null;
-        }
+        $constraint = $guessable[0];
 
-        try {
-            $em = $constraint->em ? $this->registry->getManager($constraint->em) : $this->registry->getManagerForClass($constraint->entityClass);
-            $classMetadata = $em?->getClassMetadata($constraint->entityClass);
-        } catch (\InvalidArgumentException|MappingException) {
-            return null;
-        }
-
-        if (!$classMetadata instanceof ClassMetadata || !$field = $this->resolveField($constraint, $classMetadata)) {
-            return null;
-        }
-
-        $labels = [];
-        $loadValues = static function () use ($em, $constraint, $classMetadata, $field, &$labels): array {
-            $labels = [];
-            foreach ($em->getRepository($constraint->entityClass)->findAll() as $entity) {
-                $value = $classMetadata->getFieldValue($entity, $field);
-                $value = $value instanceof \Stringable ? (string) $value : $value;
-                $labels[(string) $value] = $entity instanceof \Stringable ? (string) $entity : (string) $value;
-            }
-
-            return array_keys($labels);
-        };
-
-        return new TypeGuess(ChoiceType::class, [
-            'choice_loader' => new CallbackChoiceLoader($loadValues),
-            'choice_label' => static function ($value) use (&$labels): string {
-                return $labels[(string) $value] ?? (string) $value;
-            },
-            'choice_translation_domain' => false,
-        ], Guess::HIGH_CONFIDENCE);
+        // above the LOW confidence text guesses, below the HIGH confidence ones of more specific constraints
+        return new TypeGuess(EntityIdentifierType::class, ['class' => $constraint->entityClass, 'em' => $constraint->em], Guess::MEDIUM_CONFIDENCE);
     }
 
     public function guessRequired(string $class, string $property): ?ValueGuess
     {
-        // null and '' are valid for EntityExists, NotBlank decides whether a value is required
-        return null;
+        if (!$guessable = $this->getGuessable($class, $property)) {
+            return null;
+        }
+
+        // a property refusing null cannot take the empty choice
+        return null !== $guessable[1] ? new ValueGuess(!$guessable[1]->allowsNull(), Guess::MEDIUM_CONFIDENCE) : null;
     }
 
     public function guessMaxLength(string $class, string $property): ?ValueGuess
@@ -101,6 +82,46 @@ final class EntityExistsTypeGuesser implements FormTypeGuesserInterface
         return null;
     }
 
+    /**
+     * @return array{0: EntityExists, 1: \ReflectionType|null}|false
+     */
+    private function getGuessable(string $class, string $property): array|false
+    {
+        return $this->cache[$class.'::'.$property] ??= $this->resolveGuessable($class, $property);
+    }
+
+    /**
+     * @return array{0: EntityExists, 1: \ReflectionType|null}|false
+     */
+    private function resolveGuessable(string $class, string $property): array|false
+    {
+        if (!$constraint = $this->getConstraint($class, $property)) {
+            return false;
+        }
+
+        // the choices are scalars, a property typed with a class or an enum cannot hold them
+        // a constraint put on a getter says nothing about the type of the property
+        $propertyType = property_exists($class, $property) ? (new \ReflectionProperty($class, $property))->getType() : null;
+        foreach ($propertyType instanceof \ReflectionUnionType ? $propertyType->getTypes() : array_filter([$propertyType]) as $type) {
+            if (!$type instanceof \ReflectionNamedType || !\in_array($type->getName(), ['int', 'string', 'mixed', 'null'], true)) {
+                return false;
+            }
+        }
+
+        try {
+            $manager = $constraint->em ? $this->registry->getManager($constraint->em) : $this->registry->getManagerForClass($constraint->entityClass);
+            $classMetadata = $manager?->getClassMetadata($constraint->entityClass);
+        } catch (\InvalidArgumentException|\ReflectionException|MappingException) {
+            return false;
+        }
+
+        if (!$classMetadata || !$this->isScalarIdentifier($constraint, $classMetadata)) {
+            return false;
+        }
+
+        return [$constraint, $propertyType];
+    }
+
     private function getConstraint(string $class, string $property): ?EntityExists
     {
         $classMetadata = $this->metadataFactory->getMetadataFor($class);
@@ -109,26 +130,50 @@ final class EntityExistsTypeGuesser implements FormTypeGuesserInterface
             return null;
         }
 
+        $found = null;
         foreach ($classMetadata->getPropertyMetadata($property) as $memberMetadata) {
             foreach ($memberMetadata->getConstraints() as $constraint) {
-                if ($constraint instanceof EntityExists) {
-                    return $constraint;
+                if (!$constraint instanceof EntityExists) {
+                    continue;
                 }
+
+                // the constraint is repeatable, a single choice cannot satisfy several lookups
+                if ($found) {
+                    return null;
+                }
+
+                $found = $constraint;
             }
         }
 
-        return null;
+        return $found;
     }
 
-    private function resolveField(EntityExists $constraint, ClassMetadata $classMetadata): ?string
+    private function isScalarIdentifier(EntityExists $constraint, ClassMetadata $classMetadata): bool
     {
-        if (!$field = $constraint->identifierField) {
-            $identifierFieldNames = $classMetadata->getIdentifierFieldNames();
-
-            return 1 === \count($identifierFieldNames) && $classMetadata->hasField($identifierFieldNames[0]) ? $identifierFieldNames[0] : null;
+        // a custom repository method cannot be turned into a list of values
+        if ($constraint->repositoryMethod) {
+            return false;
         }
 
-        // an association holds entities, not values a choice field could submit
-        return $classMetadata->hasField($field) ? $field : null;
+        $identifierFieldNames = $classMetadata->getIdentifierFieldNames();
+
+        if (1 !== \count($identifierFieldNames) || ($constraint->identifierField && $constraint->identifierField !== $identifierFieldNames[0])) {
+            return false;
+        }
+
+        $field = $identifierFieldNames[0];
+
+        if (!$classMetadata->hasField($field) || !\in_array($classMetadata->getTypeOfField($field), self::IDENTIFIER_TYPES, true)) {
+            return false;
+        }
+
+        if (!method_exists($classMetadata, 'getFieldMapping')) {
+            return true;
+        }
+
+        $mapping = $classMetadata->getFieldMapping($field);
+
+        return null === ($mapping instanceof FieldMapping ? $mapping->enumType : ($mapping['enumType'] ?? null));
     }
 }
