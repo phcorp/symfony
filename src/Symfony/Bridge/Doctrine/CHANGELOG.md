@@ -14,6 +14,7 @@ CHANGELOG
  * Map the `DatePoint`, `DayPoint` and `TimePoint` property types to their Doctrine types, so schema tools detect them without an explicit `type`
  * Load a list of entities into `array`-typed controller and command arguments with `#[MapEntity]`, using `findBy()`
  * Add the `EntityExists` constraint for validating that a value references an existing entity
+ * Add `EntityExistsTypeGuesser` to guess a `ChoiceType` listing the referenced values for properties constrained with `EntityExists`
 
 8.1
 ---
