@@ -89,25 +89,18 @@ class RoleHierarchy implements RoleHierarchyInterface
             $map = [];
             $visited = [];
             $additionalRoles = $roles;
-            while (null !== $role = key($additionalRoles)) {
-                $role = $additionalRoles[$role];
+            while (null !== $index = key($additionalRoles)) {
+                $role = $additionalRoles[$index];
                 $map[$role] = $role;
-
-                if (!isset($this->hierarchy[$role])) {
-                    next($additionalRoles);
-                    continue;
+                if (!isset($visited[$role]) && ($children = $this->hierarchy[$role] ?? [])) {
+                    $visited[$role] = true;
+                    foreach ($children as $child) {
+                        $map[$child] = $child;
+                        if (!isset($visited[$child])) {
+                            $additionalRoles[] = $child;
+                        }
+                    }
                 }
-
-                $visited[] = $role;
-
-                foreach ($this->hierarchy[$role] as $roleToAdd) {
-                    $map[$roleToAdd] = $roleToAdd;
-                }
-
-                foreach (array_diff($this->hierarchy[$role], $visited) as $additionalRole) {
-                    $additionalRoles[] = $additionalRole;
-                }
-
                 next($additionalRoles);
             }
 

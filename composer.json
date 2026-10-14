@@ -79,6 +79,7 @@
         "symfony/finder": "self.version",
         "symfony/form": "self.version",
         "symfony/framework-bundle": "self.version",
+        "symfony/graph": "self.version",
         "symfony/http-client": "self.version",
         "symfony/http-foundation": "self.version",
         "symfony/http-kernel": "self.version",

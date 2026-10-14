@@ -18,6 +18,29 @@ use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
 
 class BeforeAfterSorterTest extends TestCase
 {
+    public function testNumericStringItemsKeepTheirIdentity()
+    {
+        $this->assertSame(['2', '1', '3'], BeforeAfterSorter::sort(['1', '2', '3'], ['1' => ['after' => ['2']]]));
+    }
+
+    public function testDuplicateConstraintsDoNotChangeTheOrder()
+    {
+        $this->assertSame(['c', 'b', 'a'], BeforeAfterSorter::sort(['a', 'b', 'c'], ['a' => ['after' => ['b', 'b']], 'b' => ['after' => ['c', 'c']]]));
+    }
+
+    public function testDeepConstraintsKeepDependencyOrder()
+    {
+        $seed = $constraints = [];
+        for ($i = 0; $i < 10000; ++$i) {
+            $seed[] = 'item.'.$i;
+            if ($i < 9999) {
+                $constraints['item.'.$i] = ['after' => ['item.'.($i + 1)]];
+            }
+        }
+
+        $this->assertSame(array_reverse($seed), BeforeAfterSorter::sort($seed, $constraints));
+    }
+
     public function testSeedOrderIsKeptWhenThereIsNoConstraint()
     {
         $this->assertSame(['a', 'b', 'c'], BeforeAfterSorter::sort(['a', 'b', 'c'], []));

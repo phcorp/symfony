@@ -67,11 +67,46 @@ final class BeforeAfterSorter
             }
         }
 
-        $sorted = [];
-        $states = [];
+        $sorted = $states = $path = $indexes = [];
 
         foreach ($seed as $item) {
-            self::visit($item, $predecessors, $states, $sorted, [], $before, $after);
+            $item = (string) $item;
+            if (isset($states[$item])) {
+                continue;
+            }
+
+            $states[$item] = 0;
+            $path[] = $item;
+            $indexes[] = 0;
+
+            while ($path) {
+                $depth = \count($path) - 1;
+                $current = $path[$depth];
+                $dependencies = $predecessors[$current];
+
+                for ($i = $indexes[$depth]; isset($dependencies[$i]); ++$i) {
+                    $dependency = (string) $dependencies[$i];
+                    if (isset($states[$dependency])) {
+                        if (0 <= $states[$dependency]) {
+                            $cycle = \array_slice($path, $states[$dependency]);
+                            $cycle[] = $dependency;
+                            throw new InvalidArgumentException(\sprintf('Cycle detected in the "%s"/"%s" constraints: "%s".', $before, $after, implode('" -> "', $cycle)));
+                        }
+                        continue;
+                    }
+
+                    $indexes[$depth] = $i + 1;
+                    $states[$dependency] = $depth + 1;
+                    $path[] = $dependency;
+                    $indexes[] = 0;
+                    continue 2;
+                }
+
+                array_pop($path);
+                array_pop($indexes);
+                $states[$current] = -1;
+                $sorted[] = $current;
+            }
         }
 
         return $sorted;
@@ -199,35 +234,5 @@ final class BeforeAfterSorter
         }
 
         return array_combine($sorted, array_map(static fn ($item) => $resolved[$item], $sorted));
-    }
-
-    /**
-     * @param array<string, list<string>> $predecessors
-     * @param array<string, int>          $states
-     * @param list<string>                $sorted
-     * @param list<string>                $path
-     */
-    private static function visit(string $item, array $predecessors, array &$states, array &$sorted, array $path, string $before, string $after): void
-    {
-        if (2 === ($states[$item] ?? 0)) {
-            return;
-        }
-
-        if (1 === ($states[$item] ?? 0)) {
-            $cycle = \array_slice($path, array_search($item, $path, true));
-            $cycle[] = $item;
-
-            throw new InvalidArgumentException(\sprintf('Cycle detected in the "%s"/"%s" constraints: "%s".', $before, $after, implode('" -> "', $cycle)));
-        }
-
-        $states[$item] = 1;
-        $path[] = $item;
-
-        foreach ($predecessors[$item] as $predecessor) {
-            self::visit($predecessor, $predecessors, $states, $sorted, $path, $before, $after);
-        }
-
-        $states[$item] = 2;
-        $sorted[] = $item;
     }
 }

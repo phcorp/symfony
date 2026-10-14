@@ -29,6 +29,7 @@
         "finder": "src/Symfony/Component/Finder",
         "form": "src/Symfony/Component/Form",
         "html-sanitizer": "src/Symfony/Component/HtmlSanitizer",
+        "graph": "src/Symfony/Component/Graph",
         "http-client": "src/Symfony/Component/HttpClient",
         "http-foundation": "src/Symfony/Component/HttpFoundation",
         "http-kernel": "src/Symfony/Component/HttpKernel",

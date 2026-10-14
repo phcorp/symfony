@@ -16,6 +16,28 @@ use Symfony\Component\Security\Core\Role\RoleHierarchy;
 
 class RoleHierarchyTest extends TestCase
 {
+    public function testReachableRoleOrderIncludesChildrenBeforeTheNextRoot()
+    {
+        $roles = new RoleHierarchy(['ROLE_A' => ['ROLE_B', 'ROLE_C'], 'ROLE_B' => ['ROLE_X'], 'ROLE_C' => ['ROLE_Y']]);
+
+        $this->assertSame(['ROLE_A', 'ROLE_B', 'ROLE_X', 'ROLE_C', 'ROLE_Y'], $roles->getReachableRoleNames(['ROLE_A']));
+    }
+
+    public function testConvergentRoleHierarchyKeepsInsertionOrder()
+    {
+        $roles = new RoleHierarchy(['ROLE_A' => ['ROLE_B', 'ROLE_C', 'ROLE_B'], 'ROLE_B' => ['ROLE_D'], 'ROLE_C' => ['ROLE_D'], 'ROLE_D' => ['ROLE_E']]);
+
+        $this->assertSame(['ROLE_A', 'ROLE_B', 'ROLE_D', 'ROLE_C', 'ROLE_E'], $roles->getReachableRoleNames(['ROLE_A']));
+    }
+
+    public function testCyclicNumericRoleNamesKeepTheirExistingTypes()
+    {
+        $roles = new RoleHierarchy(['1' => ['2', '2'], '2' => ['3'], '3' => ['1']]);
+
+        $this->assertSame(['1', '2', '3'], $roles->getReachableRoleNames(['1']));
+        $this->assertSame([3, 1, 2], $roles->getParentRoleNames(['3']));
+    }
+
     public function testGetReachableRoleNames()
     {
         $role = new RoleHierarchy([
