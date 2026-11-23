@@ -53,6 +53,14 @@ class SettingsListWidget extends AbstractWidget implements FocusableInterface, P
     }
 
     /**
+     * @return list<SettingItem>
+     */
+    public function getItems(): array
+    {
+        return $this->items;
+    }
+
+    /**
      * Update the value for a setting.
      */
     public function updateValue(string $id, string $value): void

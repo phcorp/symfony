@@ -531,4 +531,54 @@ class AnsiCodeTrackerTest extends TestCase
         $this->assertSame('', $tracker->getActiveCodes(), 'Closed, with ST too.');
         $this->assertSame('', $tracker->getLineEndReset());
     }
+
+    /**
+     * @return iterable<string, array{string, string|null, string|null, string|null}>
+     */
+    public static function colonColorProvider(): iterable
+    {
+        yield 'RGB with a color space' => ["\x1b[38:2::255:0:0m", '38:2::255:0:0', null, "\x1b[38:2::255:0:0m"];
+        yield 'RGB without a color space' => ["\x1b[48:2:1:2:3m", null, '48:2:1:2:3', "\x1b[48:2:1:2:3m"];
+        yield '256 colors' => ["\x1b[38:5:9m", '38:5:9', null, "\x1b[38:5:9m"];
+        yield 'underline color' => ["\x1b[58:2::255:0:0m", null, null, "\x1b[58:2::255:0:0m"];
+        yield 'among other parameters' => ["\x1b[1;38:5:9;4m", '38:5:9', null, "\x1b[1;4;38:5:9m"];
+        yield 'incomplete' => ["\x1b[38:2:1:2m", null, null, ''];
+    }
+
+    #[DataProvider('colonColorProvider')]
+    public function testColonColors(string $code, ?string $foreground, ?string $background, string $active)
+    {
+        $this->tracker->process($code);
+        $this->assertSame($foreground, $this->tracker->getForeground());
+        $this->assertSame($background, $this->tracker->getBackground());
+        $this->assertSame($active, $this->tracker->getActiveCodes());
+    }
+
+    public function testAttributeGetters()
+    {
+        $this->assertFalse($this->tracker->isBold() || $this->tracker->isDim() || $this->tracker->isItalic() || $this->tracker->isUnderline() || $this->tracker->isStrikethrough());
+
+        $this->tracker->processText("\x1b[1;2;3;9mx\x1b[4:3m");
+        $this->assertTrue($this->tracker->isBold());
+        $this->assertTrue($this->tracker->isDim());
+        $this->assertTrue($this->tracker->isItalic());
+        $this->assertTrue($this->tracker->isUnderline(), 'A styled underline is an underline.');
+        $this->assertTrue($this->tracker->isStrikethrough());
+
+        $this->tracker->process("\x1b[4:0m");
+        $this->assertFalse($this->tracker->isUnderline());
+        $this->tracker->process("\x1b[21m");
+        $this->assertTrue($this->tracker->isUnderline(), 'A double underline is an underline.');
+        $this->tracker->process("\x1b[22;23;24;29m");
+        $this->assertFalse($this->tracker->isBold() || $this->tracker->isDim() || $this->tracker->isItalic() || $this->tracker->isUnderline() || $this->tracker->isStrikethrough());
+    }
+
+    public function testTheUnderlineColorIsNotAnAttribute()
+    {
+        $this->tracker->processText("\x1b[1m\x1b[4m\x1b[58;2;255;0;0m\x1b[58;5;9m");
+        $this->assertTrue($this->tracker->isBold());
+        $this->assertTrue($this->tracker->isUnderline());
+        $this->assertFalse($this->tracker->isStrikethrough());
+        $this->assertNull($this->tracker->getForeground());
+    }
 }

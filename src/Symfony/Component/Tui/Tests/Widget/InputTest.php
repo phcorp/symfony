@@ -584,4 +584,13 @@ class InputTest extends TestCase
 
         return [$input, $tui];
     }
+
+    public function testGetPrompt()
+    {
+        $input = new InputWidget();
+        $this->assertSame('> ', $input->getPrompt());
+
+        $input->setPrompt('Name: ');
+        $this->assertSame('Name: ', $input->getPrompt());
+    }
 }

@@ -142,6 +142,29 @@ class SelectListWidget extends AbstractWidget implements FocusableInterface, Ver
     }
 
     /**
+     * Returns the items that pass the filter, in the order they are shown.
+     *
+     * @return list<array{value: string, label: string, description?: string, checked?: bool, group?: string}>
+     */
+    public function getVisibleItems(): array
+    {
+        return array_map(fn (int $index): array => $this->items[$index], $this->filteredItemIndices);
+    }
+
+    /**
+     * Returns the index of the highlighted item among the items the filter shows.
+     */
+    public function getSelectedIndex(): int
+    {
+        return $this->selectedIndex;
+    }
+
+    public function isMultiselect(): bool
+    {
+        return $this->multiselect;
+    }
+
+    /**
      * Get the currently selected item.
      *
      * @return array{value: string, label: string, description?: string, checked?: bool}|null

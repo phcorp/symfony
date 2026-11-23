@@ -212,6 +212,11 @@ class TabsWidget extends AbstractWidget implements FocusableInterface, WidgetCon
         return $this;
     }
 
+    public function getPosition(): TabPosition
+    {
+        return $this->position;
+    }
+
     /**
      * @return $this
      */

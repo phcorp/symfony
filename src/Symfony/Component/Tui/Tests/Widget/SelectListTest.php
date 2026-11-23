@@ -1125,4 +1125,23 @@ class SelectListTest extends TestCase
 
         $this->fail(\sprintf('No visible cell found at column %d in line %s.', $column, json_encode($line)));
     }
+
+    public function testVisibleItemsAndSelectedIndexFollowTheFilter()
+    {
+        $list = new SelectListWidget([
+            ['value' => 'apple', 'label' => 'Apple'],
+            ['value' => 'banana', 'label' => 'Banana'],
+            ['value' => 'blueberry', 'label' => 'Blueberry'],
+        ], multiselect: true);
+        $this->assertTrue($list->isMultiselect());
+        $this->assertCount(3, $list->getVisibleItems());
+
+        $list->setFilter('b');
+        $this->assertSame(['Banana', 'Blueberry'], array_column($list->getVisibleItems(), 'label'));
+
+        $list->setSelectedIndex(1);
+        $this->assertSame(1, $list->getSelectedIndex());
+        $this->assertSame('blueberry', $list->getSelectedItem()['value']);
+        $this->assertFalse((new SelectListWidget([]))->isMultiselect());
+    }
 }
