@@ -141,7 +141,7 @@
     },
     "css.at-rules.media.pointer": {
         "level": "supported",
-        "note": "\"fine\" when the application tracks the mouse, \"none\" otherwise; never \"coarse\"."
+        "note": "\"fine\" with MediaContext::withPointer(), \"coarse\" with withTouch(), \"none\" otherwise."
     },
     "css.at-rules.media.prefers-color-scheme": {
         "level": "supported",

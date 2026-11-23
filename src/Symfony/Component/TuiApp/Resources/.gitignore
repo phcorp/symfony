@@ -1,0 +1,15 @@
+.build/
+build/
+bin/
+obj/
+*.user
+.DS_Store
+linux/screenshot.png
+__pycache__/
+
+windows/publish/
+windows/vm/out/
+macos/screenshot.png
+
+windows/screenshot.png
+.swiftpm/

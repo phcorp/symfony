@@ -1,0 +1,62 @@
+#!/usr/bin/env php
+<?php
+
+/*
+ * This file is part of the Symfony package.
+ *
+ * (c) Fabien Potencier <fabien@symfony.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+if ('cli' !== PHP_SAPI) {
+    throw new Exception('This script must be run from the command line.');
+}
+
+/**
+ * Builds the desktop or mobile packages of an application without a kernel, from its
+ * tui_app.yaml or tui_app.php: vendor/bin/tui-app build.
+ *
+ * A Symfony application runs bin/console tui-app:build instead.
+ */
+
+use Symfony\Component\Console\Application;
+use Symfony\Component\TuiApp\Command\BuildCommand;
+
+function includeIfExists(string $file): bool
+{
+    return file_exists($file) && include $file;
+}
+
+if (
+    // Set by Composer's proxy in vendor/bin: the autoloader of the project, also when the package is a link
+    !(isset($GLOBALS['_composer_autoload_path']) && includeIfExists($GLOBALS['_composer_autoload_path']))
+    && !includeIfExists(__DIR__.'/../../../../autoload.php')
+    && !includeIfExists(__DIR__.'/../../vendor/autoload.php')
+    && !includeIfExists(__DIR__.'/../../../../../../vendor/autoload.php')
+) {
+    fwrite(STDERR, 'Install dependencies using Composer.'.PHP_EOL);
+    exit(1);
+}
+
+// What building needs, beyond what running the application does
+$missing = array_keys(array_filter([
+    'symfony/console' => !class_exists(Application::class),
+    'symfony/config' => !interface_exists(Symfony\Component\Config\Definition\ConfigurationInterface::class),
+    'symfony/process' => !class_exists(Symfony\Component\Process\Process::class),
+    'symfony/filesystem' => !class_exists(Symfony\Component\Filesystem\Filesystem::class),
+    'psr/log' => !interface_exists(Psr\Log\LoggerInterface::class),
+]));
+if ($missing) {
+    fwrite(STDERR, sprintf('Building the application needs %s: "composer require %s".', implode(', ', $missing), implode(' ', $missing)).PHP_EOL);
+    exit(1);
+}
+
+$application = new Application('tui-app');
+$command = new BuildCommand();
+$application->addCommand($command);
+$application->setDefaultCommand($command->getName(), false);
+// "vendor/bin/tui-app build" and "vendor/bin/tui-app tui-app:build" both work
+$application->addCommand((new BuildCommand())->setName('build'));
+$application->run();

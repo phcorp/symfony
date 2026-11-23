@@ -56,6 +56,7 @@ use Symfony\Component\Scheduler\SchedulerBundle;
 use Symfony\Component\Semaphore\SemaphoreBundle;
 use Symfony\Component\Serializer\SerializerBundle;
 use Symfony\Component\Translation\TranslationBundle;
+use Symfony\Component\TuiApp\TuiAppBundle;
 use Symfony\Component\TypeInfo\TypeInfoBundle;
 use Symfony\Component\Uid\UidBundle;
 use Symfony\Component\Validator\ValidationBundle;
@@ -317,7 +318,7 @@ class MicroKernelTraitTest extends TestCase
         ];
 
         // registered with ignoreOnInvalid, so absent when the component is not installed
-        foreach ([AssetBundle::class, SerializerBundle::class, ValidationBundle::class, TranslationBundle::class, WebLinkBundle::class, LockBundle::class, MessengerBundle::class, SemaphoreBundle::class, WorkflowBundle::class, RemoteEventBundle::class, HtmlSanitizerBundle::class, TypeInfoBundle::class, PropertyAccessBundle::class, PropertyInfoBundle::class, UidBundle::class, SchedulerBundle::class, JsonStreamerBundle::class, AssetMapperBundle::class, RateLimiterBundle::class, WebhookBundle::class, HttpClientBundle::class, MailerBundle::class, NotifierBundle::class, ProcessBundle::class, JsonPathBundle::class, MimeBundle::class, ObjectMapperBundle::class, KeyManagementBundle::class, JsonSchemaBundle::class] as $class) {
+        foreach ([AssetBundle::class, SerializerBundle::class, ValidationBundle::class, TranslationBundle::class, WebLinkBundle::class, LockBundle::class, MessengerBundle::class, SemaphoreBundle::class, WorkflowBundle::class, RemoteEventBundle::class, HtmlSanitizerBundle::class, TypeInfoBundle::class, PropertyAccessBundle::class, PropertyInfoBundle::class, UidBundle::class, SchedulerBundle::class, JsonStreamerBundle::class, AssetMapperBundle::class, RateLimiterBundle::class, WebhookBundle::class, HttpClientBundle::class, MailerBundle::class, NotifierBundle::class, ProcessBundle::class, JsonPathBundle::class, MimeBundle::class, ObjectMapperBundle::class, KeyManagementBundle::class, JsonSchemaBundle::class, TuiAppBundle::class] as $class) {
             if (class_exists($class)) {
                 $expected[$class] = ['all' => true];
             }

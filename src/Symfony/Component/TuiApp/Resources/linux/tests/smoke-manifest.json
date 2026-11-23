@@ -1,0 +1,29 @@
+{
+    "manifest": 1,
+    "app": {
+        "name": "Fake App",
+        "id": "org.example.FakeApp",
+        "version": "0.1.0",
+        "description": "The stand-in TuiApp application",
+        "publisher": "The TuiApp authors",
+        "copyright": null,
+        "homepage": null,
+        "category": "developer-tools",
+        "singleInstance": false,
+        "fileAssociations": [
+            {"extension": "fake", "name": "Fake document", "mimeType": null, "role": "editor"},
+            {"extension": "md", "name": "Markdown", "mimeType": "text/markdown", "role": "viewer"}
+        ],
+        "urlSchemes": ["fake"]
+    },
+    "window": {"title": "Fake App", "width": 900, "height": 640, "minWidth": 480, "minHeight": 320, "resizable": true, "rememberGeometry": true, "theme": "system", "canvasFont": {"family": null, "size": 13}},
+    "menu": {"native": true, "about": true, "quit": true},
+    "launch": {
+        "mode": "system",
+        "command": null,
+        "args": ["./tools/fake-app.php"],
+        "php": {"path": null, "minVersion": "8.1"},
+        "env": {"pass": ["FAKE_APP_LOG"], "set": {"APP_ENV": "smoke"}}
+    },
+    "logging": {"file": null, "level": "warning"}
+}

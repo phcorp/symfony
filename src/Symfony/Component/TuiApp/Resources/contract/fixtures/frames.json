@@ -1,0 +1,20 @@
+{
+    "description": "Each frame is a u32 big-endian byte length, then the UTF-8 JSON. hex is the whole frame.",
+    "frames": [
+        {
+            "name": "beep",
+            "json": "{\"type\":\"beep\"}",
+            "hex": "0000000f7b2274797065223a2262656570227d"
+        },
+        {
+            "name": "key-text",
+            "json": "{\"type\":\"key\",\"key\":\"é\",\"text\":\"é\"}",
+            "hex": "000000257b2274797065223a226b6579222c226b6579223a22c3a9222c2274657874223a22c3a9227d"
+        },
+        {
+            "name": "paste",
+            "json": "{\"type\":\"paste\",\"text\":\"pasted\\ntext\"}",
+            "hex": "000000267b2274797065223a227061737465222c2274657874223a227061737465645c6e74657874227d"
+        }
+    ]
+}

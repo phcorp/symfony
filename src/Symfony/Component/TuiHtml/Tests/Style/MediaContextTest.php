@@ -12,6 +12,7 @@
 namespace Symfony\Component\TuiHtml\Tests\Style;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\TuiHtml\Css\MediaQuery;
 use Symfony\Component\TuiHtml\Exception\InvalidArgumentException;
 use Symfony\Component\TuiHtml\Style\CellSize;
 use Symfony\Component\TuiHtml\Style\ColorScheme;
@@ -72,6 +73,21 @@ final class MediaContextTest extends TestCase
         $this->assertSame(256, $pointer->colors);
         $this->assertTrue($pointer->withCellSize(null)->pointer, 'Changing the cell size keeps the other properties.');
         $this->assertSame(256, $pointer->withCellSize(null)->colors);
+    }
+
+    public function testTouchHasACoarsePointerWithoutHover()
+    {
+        $base = new MediaContext();
+        $touch = $base->withTouch();
+        $this->assertTrue(MediaQuery::parse('(pointer: coarse) and (hover: none)')->matches($touch));
+        $this->assertTrue(MediaQuery::parse('(pointer) and (any-pointer: coarse)')->matches($touch));
+        $this->assertFalse(MediaQuery::parse('(pointer: fine), (hover: hover), (pointer: none)')->matches($touch));
+        $this->assertNotSame($base->getKey(), $touch->getKey());
+        $this->assertTrue($touch->withCellSize(null)->withSize(40, 30)->touch);
+        $this->assertFalse($touch->withPointer()->touch);
+        $this->assertTrue($touch->withPointer()->pointer);
+        $this->assertFalse($touch->withTouch(false)->touch);
+        $this->assertFalse($base->touch);
     }
 
     public function testKeyChangesWithEveryProperty()

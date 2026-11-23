@@ -375,6 +375,7 @@ class Configuration implements ConfigurationInterface
             'webhook' => ['webhook', $enabled, false],
             'remote_event' => ['remote_event', $enabled, false],
             'json_streamer' => ['json_streamer', $enabled, false],
+            'tui_app' => ['tui_app', null, false],
         ] as $key => [$alias, $treatTrueLike, $acceptsResourcesAsString]) {
             $node = $children->variableNode($key)->aliasOf($alias);
 

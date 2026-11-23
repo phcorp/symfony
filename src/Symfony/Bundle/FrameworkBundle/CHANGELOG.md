@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+8.3
+---
+
+ * Add `framework.tui_app`, which configures the desktop applications of the TuiApp component
+
 8.2
 ---
 

@@ -28,7 +28,7 @@ final class MediaContext
     /** 24-bit colors, the default */
     public const TRUE_COLORS = 16777216;
 
-    public function __construct(public readonly int $columns = 80, public readonly int $rows = 24, public readonly ColorScheme $colorScheme = ColorScheme::Dark, public readonly Density $density = Density::Regular, public readonly bool $highContrast = false, public readonly bool $forcedColors = false, public readonly bool $reducedMotion = false, public readonly ?CellSize $cellSize = null, public readonly bool $pointer = false, public readonly int $colors = self::TRUE_COLORS, public readonly bool $textSizing = false)
+    public function __construct(public readonly int $columns = 80, public readonly int $rows = 24, public readonly ColorScheme $colorScheme = ColorScheme::Dark, public readonly Density $density = Density::Regular, public readonly bool $highContrast = false, public readonly bool $forcedColors = false, public readonly bool $reducedMotion = false, public readonly ?CellSize $cellSize = null, public readonly bool $pointer = false, public readonly int $colors = self::TRUE_COLORS, public readonly bool $textSizing = false, public readonly bool $touch = false)
     {
     }
 
@@ -100,7 +100,7 @@ final class MediaContext
 
     public function withCellSize(?CellSize $cellSize): self
     {
-        return new self($this->columns, $this->rows, $this->colorScheme, $this->density, $this->highContrast, $this->forcedColors, $this->reducedMotion, $cellSize, $this->pointer, $this->colors, $this->textSizing);
+        return new self($this->columns, $this->rows, $this->colorScheme, $this->density, $this->highContrast, $this->forcedColors, $this->reducedMotion, $cellSize, $this->pointer, $this->colors, $this->textSizing, $this->touch);
     }
 
     /**
@@ -117,7 +117,15 @@ final class MediaContext
      */
     public function withPointer(bool $pointer = true): self
     {
-        return $this->with(null, null, null, null, null, null, null, $pointer);
+        return $this->with(null, null, null, null, null, null, null, $pointer, null, null, $pointer ? false : null);
+    }
+
+    /**
+     * Uses touch input: (pointer: coarse) and (hover: none) match.
+     */
+    public function withTouch(bool $touch = true): self
+    {
+        return $this->with(null, null, null, null, null, null, null, $touch ? false : null, null, null, $touch);
     }
 
     /**
@@ -149,11 +157,11 @@ final class MediaContext
      */
     public function getKey(): string
     {
-        return implode(':', [$this->columns, $this->rows, $this->colorScheme->value, $this->density->value, (int) $this->highContrast, (int) $this->forcedColors, (int) $this->reducedMotion, $this->cellSize?->width, $this->cellSize?->height, (int) $this->pointer, $this->colors, (int) $this->textSizing]);
+        return implode(':', [$this->columns, $this->rows, $this->colorScheme->value, $this->density->value, (int) $this->highContrast, (int) $this->forcedColors, (int) $this->reducedMotion, $this->cellSize?->width, $this->cellSize?->height, (int) $this->pointer, $this->colors, (int) $this->textSizing, (int) $this->touch]);
     }
 
-    private function with(?int $columns = null, ?int $rows = null, ?ColorScheme $colorScheme = null, ?Density $density = null, ?bool $highContrast = null, ?bool $forcedColors = null, ?bool $reducedMotion = null, ?bool $pointer = null, ?int $colors = null, ?bool $textSizing = null): self
+    private function with(?int $columns = null, ?int $rows = null, ?ColorScheme $colorScheme = null, ?Density $density = null, ?bool $highContrast = null, ?bool $forcedColors = null, ?bool $reducedMotion = null, ?bool $pointer = null, ?int $colors = null, ?bool $textSizing = null, ?bool $touch = null): self
     {
-        return new self($columns ?? $this->columns, $rows ?? $this->rows, $colorScheme ?? $this->colorScheme, $density ?? $this->density, $highContrast ?? $this->highContrast, $forcedColors ?? $this->forcedColors, $reducedMotion ?? $this->reducedMotion, $this->cellSize, $pointer ?? $this->pointer, $colors ?? $this->colors, $textSizing ?? $this->textSizing);
+        return new self($columns ?? $this->columns, $rows ?? $this->rows, $colorScheme ?? $this->colorScheme, $density ?? $this->density, $highContrast ?? $this->highContrast, $forcedColors ?? $this->forcedColors, $reducedMotion ?? $this->reducedMotion, $this->cellSize, $pointer ?? $this->pointer, $colors ?? $this->colors, $textSizing ?? $this->textSizing, $touch ?? $this->touch);
     }
 }

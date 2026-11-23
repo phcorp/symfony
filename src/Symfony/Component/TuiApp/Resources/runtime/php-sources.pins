@@ -1,0 +1,41 @@
+# Every source the embedded PHP may be built from, at one version: static-php-cli fetches
+# each project's latest release, or a branch's head, unless told otherwise, and the lock
+# would then refuse the build the day upstream releases. One source per line:
+# <static-php-cli source name> <URL>. Each file's name must differ: they share one folder.
+# PHP itself is pinned by version in build-php.sh/build-php.ps1 (php-<version>.tar.xz).
+# Changing a pin, or adding one for a new extension's library, means recording the lock
+# again: see verify-sources.sh.
+# The tools static-php-cli's doctor would fetch, by package name (build-php.sh fetches them
+# for macOS and Linux, and checks them before they are unpacked).
+pkg-config-aarch64-linux https://github.com/static-php/static-php-cli-hosted/releases/download/2026.2.17/pkg-config-aarch64-linux-musl-1.2.5.txz
+pkg-config-x86_64-linux https://github.com/static-php/static-php-cli-hosted/releases/download/2026.2.17/pkg-config-x86_64-linux-musl-1.2.5.txz
+pkg-config-aarch64-macos https://github.com/static-php/static-php-cli-hosted/releases/download/2026.2.17/pkg-config-aarch64-darwin.txz
+pkg-config-x86_64-macos https://github.com/static-php/static-php-cli-hosted/releases/download/2026.2.17/pkg-config-x86_64-darwin.txz
+musl-toolchain-aarch64-linux https://dl.static-php.dev/static-php-cli/deps/musl-toolchain/aarch64-musl-toolchain.tgz
+musl-toolchain-x86_64-linux https://dl.static-php.dev/static-php-cli/deps/musl-toolchain/x86_64-musl-toolchain.tgz
+musl-1.2.5 https://musl.libc.org/releases/musl-1.2.5.tar.gz
+# build-php.ps1 fetches them for Windows, and checks them before they are unpacked.
+nasm-x86_64-win https://dl.static-php.dev/static-php-cli/deps/nasm/nasm-2.16.01-win64.zip
+strawberry-perl-x86_64-win https://github.com/StrawberryPerl/Perl-Dist-Strawberry/releases/download/SP_5380_5361/strawberry-perl-5.38.0.1-64bit-portable.zip
+micro https://github.com/static-php/phpmicro/archive/fb6d497b6f4cf138ee3851a30c905d64b7b19aed.tar.gz
+libiconv https://ftp.gnu.org/gnu/libiconv/libiconv-1.19.1.tar.gz
+xz https://github.com/tukaani-project/xz/releases/download/v5.8.4/xz-5.8.4.tar.xz
+zlib https://github.com/madler/zlib/releases/download/v1.4/zlib-1.4.tar.gz
+libxml2 https://github.com/GNOME/libxml2/archive/refs/tags/v2.15.4.tar.gz
+frankenphp https://github.com/php/frankenphp/archive/refs/tags/v1.13.5.tar.gz
+brotli https://github.com/google/brotli/archive/refs/tags/v1.2.1.tar.gz
+watcher https://github.com/e-dant/watcher/archive/refs/tags/release/0.14.5.tar.gz
+libpng https://github.com/pnggroup/libpng/archive/refs/tags/v1.6.59.tar.gz
+libaom https://storage.googleapis.com/aom-releases/libaom-3.15.3.tar.gz
+libwebp https://github.com/webmproject/libwebp/archive/refs/tags/v1.6.0.tar.gz
+libjpeg https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/3.2.1.tar.gz
+libavif https://github.com/AOMediaCodec/libavif/archive/refs/tags/v1.4.2.tar.gz
+freetype https://github.com/freetype/freetype/archive/refs/tags/VER-2-15-0.tar.gz
+openssl https://github.com/openssl/openssl/releases/download/openssl-3.6.5/openssl-3.6.5.tar.gz
+libsodium https://github.com/jedisct1/libsodium/releases/download/1.0.22-RELEASE/libsodium-1.0.22.tar.gz
+libiconv-win https://github.com/static-php/libiconv-win/archive/822b5aaf1ce02cab8d3c4589a22c02d408c9c519.tar.gz
+icu https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz
+# intl on Windows: ICU built by static-php-cli, at an unversioned URL. Today ICU 79.1, built
+# 2026-11-20; the lock refuses it the day upstream rebuilds it (see README.md).
+icu-static-win https://dl.static-php.dev/static-php-cli/deps/icu-static-windows-x64/icu-static-windows-x64.zip
+sqlite https://www.sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
