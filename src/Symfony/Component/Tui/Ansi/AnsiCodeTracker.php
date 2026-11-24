@@ -164,8 +164,36 @@ final class AnsiCodeTracker
             || null !== $this->link;
     }
 
+    public function isBold(): bool
+    {
+        return $this->bold;
+    }
+
+    public function isDim(): bool
+    {
+        return $this->dim;
+    }
+
+    public function isItalic(): bool
+    {
+        return $this->italic;
+    }
+
     /**
-     * The foreground color set, as its SGR parameters, like 36 or 38;2;255;0;0; null for the default one.
+     * Whether the text is underlined, by a plain, double or styled (like curly) underline.
+     */
+    public function isUnderline(): bool
+    {
+        return $this->underline || $this->doubleUnderline;
+    }
+
+    public function isStrikethrough(): bool
+    {
+        return $this->strikethrough;
+    }
+
+    /**
+     * The foreground color set, as its SGR parameters, like 36, 38;2;255;0;0 or 38:2::255:0:0; null for the default one.
      */
     public function getForeground(): ?string
     {
@@ -173,7 +201,7 @@ final class AnsiCodeTracker
     }
 
     /**
-     * The background color set, as its SGR parameters, like 44 or 48;2;0;0;255; null for the default one.
+     * The background color set, as its SGR parameters, like 44, 48;2;0;0;255 or 48:2::0:0:255; null for the default one.
      */
     public function getBackground(): ?string
     {

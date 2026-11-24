@@ -25,6 +25,8 @@ CHANGELOG
  * Add `FocusManager::moveBefore()` to move focusables in the focus cycle, and `FocusManager::keepFocusWhile()` to keep the focus on a widget that is removed and added again
  * Add `ContainerWidget::replace()` to replace a child in place
  * Accept `null` in `AbstractWidget::setLabel()` to remove the label
+ * Add `InputWidget::getPrompt()`, `SelectListWidget::getVisibleItems()`, `SelectListWidget::getSelectedIndex()`, `SelectListWidget::isMultiselect()`, `SettingsListWidget::getItems()` and `TabsWidget::getPosition()`, for renderers that draw widgets with other controls
+ * Add `AnsiCodeTracker::isBold()`, `isDim()`, `isItalic()`, `isUnderline()` and `isStrikethrough()`, and keep the colors set with colon sub-parameters, like `38:2::255:0:0`, across wrapped lines
  * Draw bidirectional text in visual order when the intl extension is available, the terminal set to its explicit BiDi mode while the TUI runs, and add ANSI text measurement and wrapping helpers
 
 8.2

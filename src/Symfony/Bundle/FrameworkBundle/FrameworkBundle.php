@@ -87,6 +87,7 @@ use Symfony\Component\Scheduler\SchedulerBundle;
 use Symfony\Component\Semaphore\SemaphoreBundle;
 use Symfony\Component\Serializer\SerializerBundle;
 use Symfony\Component\Translation\TranslationBundle;
+use Symfony\Component\TuiApp\TuiAppBundle;
 use Symfony\Component\TypeInfo\TypeInfoBundle;
 use Symfony\Component\Uid\UidBundle;
 use Symfony\Component\Validator\ValidationBundle;
@@ -145,6 +146,7 @@ class_exists(Registry::class);
 #[RequiredBundle(ObjectMapperBundle::class, ignoreOnInvalid: true)]
 #[RequiredBundle(KeyManagementBundle::class, ignoreOnInvalid: true)]
 #[RequiredBundle(JsonSchemaBundle::class, ignoreOnInvalid: true)]
+#[RequiredBundle(TuiAppBundle::class, ignoreOnInvalid: true)]
 class FrameworkBundle extends Bundle
 {
     public function boot(): void
@@ -199,6 +201,7 @@ class FrameworkBundle extends Bundle
             'semaphore' => 'symfony/semaphore',
             'serializer' => 'symfony/serializer',
             'translation' => 'symfony/translation',
+            'tui_app' => 'symfony/tui-app',
             'type_info' => 'symfony/type-info',
             'uid' => 'symfony/uid',
             'validation' => 'symfony/validator',

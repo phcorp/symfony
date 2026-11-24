@@ -1,0 +1,14 @@
+--- a/ext/standard/php_fopen_wrapper.c
++++ b/ext/standard/php_fopen_wrapper.c
+@@ -317,7 +317,10 @@
+ 			return NULL;
+ 		}
+ 
+-#ifdef HAVE_UNISTD_H
++#if defined(__ANDROID__)
++		long limit = sysconf(_SC_OPEN_MAX);
++		dtablesize = limit > 0 && limit < INT_MAX ? (int) limit : INT_MAX;
++#elif defined(HAVE_UNISTD_H)
+ 		dtablesize = getdtablesize();
+ #else
+ 		dtablesize = INT_MAX;

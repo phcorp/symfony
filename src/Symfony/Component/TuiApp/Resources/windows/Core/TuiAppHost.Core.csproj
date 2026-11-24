@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Everything the host does that needs no window: tested on any OS by `dotnet test`. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>TuiAppHost.Core</RootNamespace>
+    <AssemblyName>TuiAppHost.Core</AssemblyName>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,291 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://symfony.com/schema/tui-app/manifest-1.json",
+    "title": "Symfony TuiApp application manifest, version 1",
+    "description": "Written by the tui-app:build command from the resolved tui_app configuration, next to the host executable: Contents/Resources/app.manifest.json in a macOS bundle, share/<id>/app.manifest.json on Linux, app.manifest.json next to the .exe on Windows. Paths are relative to the directory that holds the manifest. The host reads nothing else.",
+    "type": "object",
+    "required": [
+        "manifest",
+        "app",
+        "window",
+        "menu",
+        "launch"
+    ],
+    "properties": {
+        "manifest": {
+            "const": 1
+        },
+        "app": {
+            "type": "object",
+            "required": [
+                "name",
+                "id",
+                "version"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+$"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "publisher": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "copyright": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "homepage": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "category": {
+                    "enum": [
+                        "business",
+                        "developer-tools",
+                        "education",
+                        "entertainment",
+                        "finance",
+                        "games",
+                        "graphics",
+                        "lifestyle",
+                        "music",
+                        "news",
+                        "productivity",
+                        "social",
+                        "utilities",
+                        "video"
+                    ],
+                    "description": "macOS: LSApplicationCategoryType (public.app-category.<category>); Linux: the desktop entry categories."
+                },
+                "singleInstance": {
+                    "type": "boolean"
+                },
+                "fileAssociations": {
+                    "type": "array",
+                    "description": "File types the application opens: CFBundleDocumentTypes, MimeType of the desktop entry, registry keys on Windows.",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "extension",
+                            "name",
+                            "role"
+                        ],
+                        "properties": {
+                            "extension": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$",
+                                "description": "Without the dot."
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "mimeType": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Defaults to application/x-<id>-<extension> on Linux."
+                            },
+                            "role": {
+                                "enum": [
+                                    "editor",
+                                    "viewer"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "urlSchemes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9+.-]*$"
+                    },
+                    "description": "CFBundleURLTypes, x-scheme-handler/<scheme> of the desktop entry, URL protocol registry keys on Windows."
+                }
+            }
+        },
+        "window": {
+            "type": "object",
+            "required": [
+                "title",
+                "width",
+                "height"
+            ],
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "height": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "minWidth": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "minHeight": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ]
+                },
+                "resizable": {
+                    "type": "boolean"
+                },
+                "rememberGeometry": {
+                    "type": "boolean"
+                },
+                "theme": {
+                    "enum": [
+                        "system",
+                        "light",
+                        "dark"
+                    ]
+                },
+                "canvasFont": {
+                    "type": "object",
+                    "properties": {
+                        "family": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "size": {
+                            "type": "number"
+                        }
+                    }
+                }
+            }
+        },
+        "menu": {
+            "type": "object",
+            "properties": {
+                "native": {
+                    "type": "boolean"
+                },
+                "about": {
+                    "type": "boolean"
+                },
+                "quit": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "launch": {
+            "description": "How the host starts the application. mode system: the host looks for php (php.path, else PATH) and checks php.minVersion before running it with args. Other desktop modes: command is a path relative to the manifest. On mobile, embedded mode has command null: PHP is linked into the host and args contains its options, the application entry and its arguments.",
+            "type": "object",
+            "required": [
+                "mode",
+                "args"
+            ],
+            "properties": {
+                "mode": {
+                    "enum": [
+                        "embedded",
+                        "custom",
+                        "system",
+                        "elephc"
+                    ]
+                },
+                "command": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Arguments; relative paths starting with ./ are resolved against the manifest directory."
+                },
+                "php": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "path": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        },
+                        "minVersion": {
+                            "type": [
+                                "string",
+                                "null"
+                            ]
+                        }
+                    }
+                },
+                "env": {
+                    "type": "object",
+                    "properties": {
+                        "pass": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "For desktop PHP processes, variables kept from the host environment; others are dropped, except PATH, HOME, USER, LANG, LC_*, TMPDIR, TEMP, TMP, SystemRoot, APPDATA, LOCALAPPDATA, XDG_* and DISPLAY/WAYLAND_DISPLAY. Mobile PHP shares the native process environment; pass does not filter it."
+                        },
+                        "set": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "logging": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "level": {
+                    "enum": [
+                        "debug",
+                        "info",
+                        "warning",
+                        "error"
+                    ]
+                }
+            }
+        }
+    }
+}

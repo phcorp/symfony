@@ -1,0 +1,69 @@
+{
+    "name": "symfony/tui-app",
+    "type": "library",
+    "description": "Runs Symfony Tui applications as desktop applications, with native controls",
+    "keywords": [
+        "tui",
+        "desktop",
+        "gui",
+        "native"
+    ],
+    "homepage": "https://symfony.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Fabien Potencier",
+            "email": "fabien@symfony.com"
+        },
+        {
+            "name": "Symfony Community",
+            "homepage": "https://symfony.com/contributors"
+        }
+    ],
+    "require": {
+        "php": ">=8.4.1",
+        "revolt/event-loop": "^1.0",
+        "symfony/event-dispatcher": "^8.0",
+        "symfony/event-dispatcher-contracts": "^3.0",
+        "symfony/tui": "^8.3"
+    },
+    "require-dev": {
+        "opis/json-schema": "^2.6",
+        "psr/log": "^1|^2|^3",
+        "symfony/config": "^7.4|^8.0",
+        "symfony/console": "^7.4|^8.0",
+        "symfony/dependency-injection": "^8.1",
+        "symfony/filesystem": "^7.4|^8.0",
+        "symfony/process": "^7.4|^8.0",
+        "symfony/string": "^7.4|^8.0",
+        "symfony/tui-html": "^8.3",
+        "symfony/yaml": "^7.4|^8.0"
+    },
+    "conflict": {
+        "symfony/dependency-injection": "<8.1",
+        "symfony/tui-html": "<8.3"
+    },
+    "suggest": {
+        "psr/log": "To build the desktop application",
+        "symfony/config": "To configure and build the desktop application",
+        "symfony/console": "To build the desktop application with the tui-app:build command",
+        "symfony/dependency-injection": "To configure the desktop application under tui_app in a Symfony application",
+        "symfony/filesystem": "To configure and build the desktop application",
+        "symfony/process": "To build the desktop application",
+        "symfony/string": "To name the desktop application from a name that is not ASCII",
+        "symfony/tui-html": "To draw HTML and CSS views, in a terminal and in a window",
+        "symfony/yaml": "To write the configuration in YAML"
+    },
+    "bin": [
+        "Resources/bin/tui-app"
+    ],
+    "autoload": {
+        "psr-4": {
+            "Symfony\\Component\\TuiApp\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
+    },
+    "minimum-stability": "dev"
+}

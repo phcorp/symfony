@@ -1,0 +1,12 @@
+services:
+    test_tui_app_config:
+        alias: tui_app.config
+        public: true
+framework:
+    tui_app:
+        app:
+            name: Acme Notes
+            id: com.acme.notes
+            version: '%env(TUI_APP_VERSION)%'
+        runtime:
+            mode: system

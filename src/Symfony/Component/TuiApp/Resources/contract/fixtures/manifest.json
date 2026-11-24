@@ -1,0 +1,67 @@
+{
+    "manifest": 1,
+    "app": {
+        "name": "Acme Notes",
+        "id": "com.acme.notes",
+        "version": "1.2.0",
+        "description": "Notes",
+        "publisher": "Acme",
+        "copyright": "© 2026 Acme",
+        "homepage": "https://example.com",
+        "category": "productivity",
+        "singleInstance": true,
+        "fileAssociations": [
+            {
+                "extension": "acme",
+                "name": "Acme note",
+                "mimeType": null,
+                "role": "editor"
+            }
+        ],
+        "urlSchemes": [
+            "acme"
+        ]
+    },
+    "window": {
+        "title": "Acme Notes",
+        "width": 900,
+        "height": 640,
+        "minWidth": 480,
+        "minHeight": 320,
+        "resizable": true,
+        "rememberGeometry": true,
+        "theme": "system",
+        "canvasFont": {
+            "family": null,
+            "size": 13
+        }
+    },
+    "menu": {
+        "native": true,
+        "about": true,
+        "quit": true
+    },
+    "launch": {
+        "mode": "embedded",
+        "command": "runtime/php",
+        "args": [
+            "-n",
+            "-c",
+            "./runtime/php.ini",
+            "./app/app.phar"
+        ],
+        "php": null,
+        "env": {
+            "pass": [
+                "LANG"
+            ],
+            "set": {
+                "APP_ENV": "prod"
+            }
+        }
+    },
+    "logging": {
+        "file": null,
+        "level": "warning"
+    }
+}

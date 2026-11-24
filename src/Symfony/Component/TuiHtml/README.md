@@ -67,7 +67,7 @@ selectors (`querySelector()`, `getById()`), and its widgets dispatch events: `Fo
 
 The renderer is selected once, before the start, or decorated by the renderer selected when that one implements
 `RendererDecoratorInterface`. Native Tui widgets and style sheets can be used next to HTML views.
-Media features (color scheme, density, pointer, color depth) are set on the renderer with `setMediaContext()`.
+Media features (color scheme, density, pointer, color depth) are set on the renderer with `setMediaContext()`. `MediaContext::withTouch()` selects `(pointer: coarse)` and `(hover: none)`; `withPointer()` selects a fine pointer with hover.
 
 Twig templates
 --------------

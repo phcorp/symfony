@@ -351,4 +351,12 @@ class SettingsListTest extends TestCase
 
         return $widget->getValue('theme');
     }
+
+    public function testGetItems()
+    {
+        $items = [new SettingItem('theme', 'Theme', 'dark', null, ['light', 'dark'])];
+        $list = new SettingsListWidget($items);
+
+        $this->assertSame($items, $list->getItems());
+    }
 }

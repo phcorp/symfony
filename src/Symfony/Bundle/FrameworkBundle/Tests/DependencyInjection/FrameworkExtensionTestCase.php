@@ -119,6 +119,7 @@ use Symfony\Component\Translation\DependencyInjection\RemoveMissingDependenciesP
 use Symfony\Component\Translation\DependencyInjection\TranslatorPass;
 use Symfony\Component\Translation\TranslatableMessage;
 use Symfony\Component\Translation\TranslationBundle;
+use Symfony\Component\TuiApp\TuiAppBundle;
 use Symfony\Component\TypeInfo\TypeInfoBundle;
 use Symfony\Component\Uid\Factory\UuidFactory;
 use Symfony\Component\Uid\UidBundle;
@@ -2355,6 +2356,19 @@ abstract class FrameworkExtensionTestCase extends TestCase
         $this->assertSame(['include_null_properties' => true], $container->getParameter('.json_streamer.default_options'));
     }
 
+    public function testTuiAppConfigurationIsForwardedToTuiAppBundle()
+    {
+        $container = $this->createContainerFromFile('tui_app');
+
+        $this->assertTrue($container->has('test_tui_app_config'));
+        $config = $container->getParameter('.tui_app.config');
+        $this->assertSame('Acme Notes', $config['app']['name']);
+        $this->assertSame('com.acme.notes', $config['app']['id']);
+        $this->assertSame('system', $config['runtime']['mode']);
+        $this->assertStringContainsString('TUI_APP_VERSION', $config['app']['version']);
+        $this->assertTrue($container->hasDefinition('console.command.tui_app_build'));
+    }
+
     public function testSecretsDecryptionEnvVarWithDot()
     {
         $container = $this->createContainerFromClosure(static function (ContainerBuilder $container) {
@@ -2444,6 +2458,7 @@ abstract class FrameworkExtensionTestCase extends TestCase
         $container->registerExtension(new WebhookBundle()->getContainerExtension());
         $container->registerExtension(new HttpClientBundle()->getContainerExtension());
         $container->registerExtension(new MailerBundle()->getContainerExtension());
+        $container->registerExtension(new TuiAppBundle()->getContainerExtension());
         $container->getCompilerPassConfig()->setMergePass(new MergeExtensionConfigurationPass(['cache']));
 
         return $container;

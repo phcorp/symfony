@@ -1,0 +1,734 @@
+{
+    "description": "Apply the patches from messages.json in order. After each one, the tree, serialized as {id, kind, props (keys sorted, null props dropped), children}, equals tree.",
+    "steps": [
+        {
+            "patch": "patch-create",
+            "tree": {
+                "id": 1,
+                "kind": "stack",
+                "props": {
+                    "direction": "vertical",
+                    "gap": 1,
+                    "grow": 1
+                },
+                "children": [
+                    {
+                        "id": 2,
+                        "kind": "label",
+                        "props": {
+                            "style": {
+                                "fg": "#00ff00",
+                                "bold": true
+                            },
+                            "text": "What is your name?"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 3,
+                        "kind": "textfield",
+                        "props": {
+                            "prompt": "> ",
+                            "value": ""
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        },
+        {
+            "patch": "patch-all-kinds",
+            "tree": {
+                "id": 1,
+                "kind": "stack",
+                "props": {
+                    "direction": "vertical",
+                    "gap": 1,
+                    "grow": 1
+                },
+                "children": [
+                    {
+                        "id": 2,
+                        "kind": "label",
+                        "props": {
+                            "style": {
+                                "fg": "#00ff00",
+                                "bold": true
+                            },
+                            "text": "What is your name?"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 3,
+                        "kind": "textfield",
+                        "props": {
+                            "prompt": "> ",
+                            "value": ""
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 10,
+                        "kind": "textarea",
+                        "props": {
+                            "maxLines": 10,
+                            "minLines": 3,
+                            "value": "line 1\nline 2"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 11,
+                        "kind": "list",
+                        "props": {
+                            "checked": [],
+                            "items": [
+                                {
+                                    "label": "Library",
+                                    "description": "A reusable package"
+                                },
+                                {
+                                    "label": "Application",
+                                    "description": null
+                                }
+                            ],
+                            "multiple": false,
+                            "selected": 0
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 12,
+                        "kind": "form",
+                        "props": {
+                            "rows": [
+                                {
+                                    "id": "theme",
+                                    "label": "Theme",
+                                    "value": "dark",
+                                    "choices": [
+                                        "light",
+                                        "dark"
+                                    ]
+                                },
+                                {
+                                    "id": "name",
+                                    "label": "Name",
+                                    "value": "Ada",
+                                    "description": "Your name",
+                                    "choices": null
+                                },
+                                {
+                                    "id": "plugins",
+                                    "label": "Plugins",
+                                    "value": "3 installed",
+                                    "choices": null,
+                                    "readOnly": true
+                                }
+                            ]
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 13,
+                        "kind": "tabs",
+                        "props": {
+                            "active": 0,
+                            "position": "top",
+                            "tabs": [
+                                "General",
+                                "Advanced"
+                            ]
+                        },
+                        "children": [
+                            {
+                                "id": 14,
+                                "kind": "stack",
+                                "props": {},
+                                "children": []
+                            },
+                            {
+                                "id": 15,
+                                "kind": "stack",
+                                "props": {},
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 16,
+                        "kind": "disclosure",
+                        "props": {
+                            "expanded": false,
+                            "summary": "Details"
+                        },
+                        "children": [
+                            {
+                                "id": 17,
+                                "kind": "label",
+                                "props": {
+                                    "runs": [
+                                        {
+                                            "t": "plain "
+                                        },
+                                        {
+                                            "t": "bold",
+                                            "b": true
+                                        },
+                                        {
+                                            "t": " red",
+                                            "fg": "#ff0000",
+                                            "u": true
+                                        }
+                                    ]
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 18,
+                        "kind": "progress",
+                        "props": {
+                            "progress": 0.25,
+                            "text": "Copying 1 of 4"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 19,
+                        "kind": "progress",
+                        "props": {},
+                        "children": []
+                    },
+                    {
+                        "id": 20,
+                        "kind": "spinner",
+                        "props": {
+                            "cancellable": true,
+                            "running": true,
+                            "text": "Loading…"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 21,
+                        "kind": "canvas",
+                        "props": {
+                            "columns": 12,
+                            "focusable": false,
+                            "lines": [
+                                [
+                                    {
+                                        "t": "# Title",
+                                        "fg": "#ffaa00",
+                                        "b": true
+                                    }
+                                ],
+                                [],
+                                [
+                                    {
+                                        "t": "• "
+                                    },
+                                    {
+                                        "t": "item",
+                                        "i": true
+                                    }
+                                ]
+                            ]
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        },
+        {
+            "patch": "patch-update-move-remove",
+            "tree": {
+                "id": 1,
+                "kind": "stack",
+                "props": {
+                    "direction": "vertical",
+                    "gap": 1,
+                    "grow": 1
+                },
+                "children": [
+                    {
+                        "id": 2,
+                        "kind": "label",
+                        "props": {
+                            "text": "Hello Ada!"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 10,
+                        "kind": "textarea",
+                        "props": {
+                            "maxLines": 10,
+                            "minLines": 3,
+                            "value": "line 1\nline 2"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 11,
+                        "kind": "list",
+                        "props": {
+                            "checked": [],
+                            "items": [
+                                {
+                                    "label": "Library",
+                                    "description": "A reusable package"
+                                },
+                                {
+                                    "label": "Application",
+                                    "description": null
+                                }
+                            ],
+                            "multiple": false,
+                            "selected": 0
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 12,
+                        "kind": "form",
+                        "props": {
+                            "rows": [
+                                {
+                                    "id": "theme",
+                                    "label": "Theme",
+                                    "value": "dark",
+                                    "choices": [
+                                        "light",
+                                        "dark"
+                                    ]
+                                },
+                                {
+                                    "id": "name",
+                                    "label": "Name",
+                                    "value": "Ada",
+                                    "description": "Your name",
+                                    "choices": null
+                                },
+                                {
+                                    "id": "plugins",
+                                    "label": "Plugins",
+                                    "value": "3 installed",
+                                    "choices": null,
+                                    "readOnly": true
+                                }
+                            ]
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 13,
+                        "kind": "tabs",
+                        "props": {
+                            "active": 0,
+                            "position": "top",
+                            "tabs": [
+                                "General",
+                                "Advanced"
+                            ]
+                        },
+                        "children": [
+                            {
+                                "id": 14,
+                                "kind": "stack",
+                                "props": {},
+                                "children": []
+                            },
+                            {
+                                "id": 15,
+                                "kind": "stack",
+                                "props": {},
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 16,
+                        "kind": "disclosure",
+                        "props": {
+                            "expanded": false,
+                            "summary": "Details"
+                        },
+                        "children": [
+                            {
+                                "id": 17,
+                                "kind": "label",
+                                "props": {
+                                    "runs": [
+                                        {
+                                            "t": "plain "
+                                        },
+                                        {
+                                            "t": "bold",
+                                            "b": true
+                                        },
+                                        {
+                                            "t": " red",
+                                            "fg": "#ff0000",
+                                            "u": true
+                                        }
+                                    ]
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 18,
+                        "kind": "progress",
+                        "props": {
+                            "progress": 0.25,
+                            "text": "Copying 1 of 4"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 19,
+                        "kind": "progress",
+                        "props": {},
+                        "children": []
+                    },
+                    {
+                        "id": 20,
+                        "kind": "spinner",
+                        "props": {
+                            "cancellable": true,
+                            "running": true,
+                            "text": "Loading…"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 21,
+                        "kind": "canvas",
+                        "props": {
+                            "columns": 12,
+                            "focusable": false,
+                            "lines": [
+                                [
+                                    {
+                                        "t": "# Title",
+                                        "fg": "#ffaa00",
+                                        "b": true
+                                    }
+                                ],
+                                [],
+                                [
+                                    {
+                                        "t": "• "
+                                    },
+                                    {
+                                        "t": "item",
+                                        "i": true
+                                    }
+                                ]
+                            ]
+                        },
+                        "children": []
+                    }
+                ]
+            }
+        },
+        {
+            "patch": "patch-canvas-controls",
+            "tree": {
+                "id": 1,
+                "kind": "stack",
+                "props": {
+                    "direction": "vertical",
+                    "gap": 1,
+                    "grow": 1
+                },
+                "children": [
+                    {
+                        "id": 2,
+                        "kind": "label",
+                        "props": {
+                            "text": "Hello Ada!"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 10,
+                        "kind": "textarea",
+                        "props": {
+                            "maxLines": 10,
+                            "minLines": 3,
+                            "value": "line 1\nline 2"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 11,
+                        "kind": "list",
+                        "props": {
+                            "checked": [],
+                            "items": [
+                                {
+                                    "label": "Library",
+                                    "description": "A reusable package"
+                                },
+                                {
+                                    "label": "Application",
+                                    "description": null
+                                }
+                            ],
+                            "multiple": false,
+                            "selected": 0
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 12,
+                        "kind": "form",
+                        "props": {
+                            "rows": [
+                                {
+                                    "id": "theme",
+                                    "label": "Theme",
+                                    "value": "dark",
+                                    "choices": [
+                                        "light",
+                                        "dark"
+                                    ]
+                                },
+                                {
+                                    "id": "name",
+                                    "label": "Name",
+                                    "value": "Ada",
+                                    "description": "Your name",
+                                    "choices": null
+                                },
+                                {
+                                    "id": "plugins",
+                                    "label": "Plugins",
+                                    "value": "3 installed",
+                                    "choices": null,
+                                    "readOnly": true
+                                }
+                            ]
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 13,
+                        "kind": "tabs",
+                        "props": {
+                            "active": 0,
+                            "position": "top",
+                            "tabs": [
+                                "General",
+                                "Advanced"
+                            ]
+                        },
+                        "children": [
+                            {
+                                "id": 14,
+                                "kind": "stack",
+                                "props": {},
+                                "children": []
+                            },
+                            {
+                                "id": 15,
+                                "kind": "stack",
+                                "props": {},
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 16,
+                        "kind": "disclosure",
+                        "props": {
+                            "expanded": false,
+                            "summary": "Details"
+                        },
+                        "children": [
+                            {
+                                "id": 17,
+                                "kind": "label",
+                                "props": {
+                                    "runs": [
+                                        {
+                                            "t": "plain "
+                                        },
+                                        {
+                                            "t": "bold",
+                                            "b": true
+                                        },
+                                        {
+                                            "t": " red",
+                                            "fg": "#ff0000",
+                                            "u": true
+                                        }
+                                    ]
+                                },
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 18,
+                        "kind": "progress",
+                        "props": {
+                            "progress": 0.25,
+                            "text": "Copying 1 of 4"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 19,
+                        "kind": "progress",
+                        "props": {},
+                        "children": []
+                    },
+                    {
+                        "id": 20,
+                        "kind": "spinner",
+                        "props": {
+                            "cancellable": true,
+                            "running": true,
+                            "text": "Loading…"
+                        },
+                        "children": []
+                    },
+                    {
+                        "id": 21,
+                        "kind": "canvas",
+                        "props": {
+                            "columns": 12,
+                            "focusable": false,
+                            "keys": [
+                                "tab",
+                                "shift+tab"
+                            ],
+                            "lines": [
+                                [
+                                    {
+                                        "t": "# Title",
+                                        "fg": "#ffaa00",
+                                        "b": true
+                                    }
+                                ],
+                                [],
+                                [
+                                    {
+                                        "t": "• "
+                                    },
+                                    {
+                                        "t": "item",
+                                        "i": true
+                                    }
+                                ]
+                            ]
+                        },
+                        "children": [
+                            {
+                                "id": 30,
+                                "kind": "textfield",
+                                "props": {
+                                    "label": "Name",
+                                    "maxLength": 40,
+                                    "place": [
+                                        2,
+                                        10,
+                                        20,
+                                        1
+                                    ],
+                                    "value": "Ada"
+                                },
+                                "children": []
+                            },
+                            {
+                                "id": 31,
+                                "kind": "checkbox",
+                                "props": {
+                                    "checked": true,
+                                    "place": [
+                                        3,
+                                        10,
+                                        13,
+                                        1
+                                    ],
+                                    "text": "Subscribe"
+                                },
+                                "children": []
+                            },
+                            {
+                                "id": 32,
+                                "kind": "checkbox",
+                                "props": {
+                                    "checked": false,
+                                    "group": "theme",
+                                    "place": [
+                                        4,
+                                        10,
+                                        9,
+                                        1
+                                    ],
+                                    "text": "Light"
+                                },
+                                "children": []
+                            },
+                            {
+                                "id": 33,
+                                "kind": "popup",
+                                "props": {
+                                    "choices": [
+                                        "Small",
+                                        "Medium",
+                                        "Large"
+                                    ],
+                                    "place": [
+                                        5,
+                                        10,
+                                        10,
+                                        1
+                                    ],
+                                    "selected": 1
+                                },
+                                "children": []
+                            },
+                            {
+                                "id": 34,
+                                "kind": "button",
+                                "props": {
+                                    "place": [
+                                        7,
+                                        10,
+                                        8,
+                                        1
+                                    ],
+                                    "text": "Create"
+                                },
+                                "children": []
+                            },
+                            {
+                                "id": 35,
+                                "kind": "textarea",
+                                "props": {
+                                    "place": [
+                                        8,
+                                        10,
+                                        30,
+                                        3
+                                    ],
+                                    "value": "Notes"
+                                },
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

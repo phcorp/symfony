@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>TuiAppHost.Core.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <ProjectReference Include="..\Core\TuiAppHost.Core.csproj" />
+    <!-- Only read by KeyTests: the WPF reference assembly, to check the copied Key values. Same version as the App's restore. -->
+    <PackageDownload Include="Microsoft.WindowsDesktop.App.Ref" Version="[8.0.34]" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The shared contract, read in place: tui-app-hosts/contract. -->
+    <None Include="..\..\contract\fixtures\*.json" LinkBase="fixtures" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Only read by CursorTests: the cursor keywords of the contract. -->
+    <None Include="..\..\contract\protocol.json" Link="protocol.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

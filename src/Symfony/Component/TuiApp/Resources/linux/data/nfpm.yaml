@@ -1,0 +1,10 @@
+# package.sh fills the @...@ fields and appends the depends, scripts and contents.
+name: "@NAME@"
+arch: "@ARCH@"
+platform: linux
+version: "@VERSION@"
+section: misc
+maintainer: The TuiApp authors
+description: "@SUMMARY@, a Symfony TuiApp application"
+license: MIT
+overrides:

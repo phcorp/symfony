@@ -1,0 +1,1538 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://symfony.com/schema/tui-app/protocol-1.json",
+    "title": "Symfony TuiApp host protocol, version 1",
+    "description": "Messages between a TuiApp application (the PHP process, or an executable compiled with elephc) and the native host that draws its widgets. The host listens on a loopback TCP port and starts the application with TUI_APP_ADDR=tcp://127.0.0.1:<port> and TUI_APP_TOKEN=<32+ lowercase hex>. The application connects and sends auth first; the host closes any connection whose first message is not auth with the right token, which it compares in constant time, and accepts a single connection: once the application is authenticated, it stops listening. The application removes both variables from its environment once read, so that the processes it starts do not get them. Each message is a frame: a 4-byte unsigned big-endian length, then that many bytes of UTF-8 JSON holding one object with a type. Frames are at most 16 MiB. A peer ignores unknown properties, and answers an unknown message type by ignoring it.",
+    "x-version": 1,
+    "x-transport": {
+        "env": {
+            "address": "TUI_APP_ADDR",
+            "token": "TUI_APP_TOKEN"
+        },
+        "maxFrameBytes": 16777216,
+        "tokenPattern": "^[0-9a-f]{32,}$"
+    },
+    "oneOf": [
+        {
+            "$ref": "#/$defs/auth"
+        },
+        {
+            "$ref": "#/$defs/patch"
+        },
+        {
+            "$ref": "#/$defs/focus"
+        },
+        {
+            "$ref": "#/$defs/window"
+        },
+        {
+            "$ref": "#/$defs/notify"
+        },
+        {
+            "$ref": "#/$defs/beep"
+        },
+        {
+            "$ref": "#/$defs/cursor"
+        },
+        {
+            "$ref": "#/$defs/contextmenu"
+        },
+        {
+            "$ref": "#/$defs/clipboard"
+        },
+        {
+            "$ref": "#/$defs/menu"
+        },
+        {
+            "$ref": "#/$defs/closeReply"
+        },
+        {
+            "$ref": "#/$defs/bye"
+        },
+        {
+            "$ref": "#/$defs/hello"
+        },
+        {
+            "$ref": "#/$defs/resize"
+        },
+        {
+            "$ref": "#/$defs/event"
+        },
+        {
+            "$ref": "#/$defs/key"
+        },
+        {
+            "$ref": "#/$defs/paste"
+        },
+        {
+            "$ref": "#/$defs/pointer"
+        },
+        {
+            "$ref": "#/$defs/rects"
+        },
+        {
+            "$ref": "#/$defs/menuSelect"
+        },
+        {
+            "$ref": "#/$defs/contextmenuSelect"
+        },
+        {
+            "$ref": "#/$defs/appearance"
+        },
+        {
+            "$ref": "#/$defs/open"
+        },
+        {
+            "$ref": "#/$defs/close"
+        }
+    ],
+    "$defs": {
+        "nodeId": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "color": {
+            "type": [
+                "string",
+                "null"
+            ],
+            "pattern": "^#[0-9a-f]{6}$"
+        },
+        "auth": {
+            "description": "Application → host, first message.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "token",
+                "protocol"
+            ],
+            "properties": {
+                "type": {
+                    "const": "auth"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "const": 1
+                }
+            }
+        },
+        "hello": {
+            "description": "Host → application, answer to auth. Sizes are in cells of the canvas font; cell is the size of one cell in device-independent pixels.",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "protocol",
+                "os",
+                "columns",
+                "rows",
+                "cell",
+                "appearance"
+            ],
+            "properties": {
+                "type": {
+                    "const": "hello"
+                },
+                "protocol": {
+                    "const": 1
+                },
+                "os": {
+                    "enum": [
+                        "macos",
+                        "linux",
+                        "windows",
+                        "ios",
+                        "android"
+                    ]
+                },
+                "columns": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "rows": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "cell": {
+                    "type": "object",
+                    "required": [
+                        "width",
+                        "height"
+                    ],
+                    "properties": {
+                        "width": {
+                            "type": "number"
+                        },
+                        "height": {
+                            "type": "number"
+                        }
+                    }
+                },
+                "scale": {
+                    "type": "number"
+                },
+                "appearance": {
+                    "enum": [
+                        "light",
+                        "dark"
+                    ]
+                },
+                "capabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "What the host does beyond the core protocol: menu, notify, progress, appearance, open, beep, canvas-controls (it places native controls over a canvas, see place), pointer (it sends what the mouse does on a canvas, see pointer), contextmenu (it shows the menus of contextmenu), clipboard (it copies the text of clipboard), and touch (the primary pointer is coarse and does not hover). With canvas-controls, password, number, slider and listbox: it draws those kinds of controls too; the application sends a kind only to a host that lists it."
+                }
+            }
+        },
+        "patch": {
+            "description": "Application → host: changes to the node tree, applied in order and drawn together. The first patch creates the root node (parent null).",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "ops"
+            ],
+            "properties": {
+                "type": {
+                    "const": "patch"
+                },
+                "ops": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/op"
+                    }
+                }
+            }
+        },
+        "op": {
+            "oneOf": [
+                {
+                    "type": "object",
+                    "required": [
+                        "op",
+                        "id",
+                        "kind",
+                        "parent",
+                        "index",
+                        "props"
+                    ],
+                    "properties": {
+                        "op": {
+                            "const": "create"
+                        },
+                        "id": {
+                            "$ref": "#/$defs/nodeId"
+                        },
+                        "kind": {
+                            "$ref": "#/$defs/kind"
+                        },
+                        "parent": {
+                            "oneOf": [
+                                {
+                                    "$ref": "#/$defs/nodeId"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        },
+                        "index": {
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "props": {
+                            "$ref": "#/$defs/props"
+                        }
+                    }
+                },
+                {
+                    "description": "Only the props that changed. A prop set to null goes back to its default.",
+                    "type": "object",
+                    "required": [
+                        "op",
+                        "id",
+                        "props"
+                    ],
+                    "properties": {
+                        "op": {
+                            "const": "update"
+                        },
+                        "id": {
+                            "$ref": "#/$defs/nodeId"
+                        },
+                        "props": {
+                            "$ref": "#/$defs/props"
+                        }
+                    }
+                },
+                {
+                    "type": "object",
+                    "required": [
+                        "op",
+                        "id",
+                        "parent",
+                        "index"
+                    ],
+                    "properties": {
+                        "op": {
+                            "const": "move"
+                        },
+                        "id": {
+                            "$ref": "#/$defs/nodeId"
+                        },
+                        "parent": {
+                            "$ref": "#/$defs/nodeId"
+                        },
+                        "index": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    }
+                },
+                {
+                    "description": "Removes the node and its descendants.",
+                    "type": "object",
+                    "required": [
+                        "op",
+                        "id"
+                    ],
+                    "properties": {
+                        "op": {
+                            "const": "remove"
+                        },
+                        "id": {
+                            "$ref": "#/$defs/nodeId"
+                        }
+                    }
+                }
+            ]
+        },
+        "kind": {
+            "enum": [
+                "stack",
+                "label",
+                "textfield",
+                "textarea",
+                "list",
+                "form",
+                "tabs",
+                "disclosure",
+                "progress",
+                "spinner",
+                "canvas",
+                "button",
+                "checkbox",
+                "popup",
+                "password",
+                "number",
+                "slider",
+                "listbox"
+            ]
+        },
+        "run": {
+            "description": "A run of text with one style. t: text; fg, bg: colors; b: bold; d: dim; i: italic; u: underline; s: strikethrough; r: reverse.",
+            "type": "object",
+            "required": [
+                "t"
+            ],
+            "properties": {
+                "t": {
+                    "type": "string"
+                },
+                "fg": {
+                    "$ref": "#/$defs/color"
+                },
+                "bg": {
+                    "$ref": "#/$defs/color"
+                },
+                "b": {
+                    "type": "boolean"
+                },
+                "d": {
+                    "type": "boolean"
+                },
+                "i": {
+                    "type": "boolean"
+                },
+                "u": {
+                    "type": "boolean"
+                },
+                "s": {
+                    "type": "boolean"
+                },
+                "r": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "props": {
+            "description": "Props by kind. Common to all kinds: style, hidden, disabled, focusable, grow, padding, border, label (accessible name). Lengths are in cells. props is always a JSON object; a peer reads an empty array [] as an empty object. The children of a canvas are native controls placed over it with place (canvas-controls); other kinds have no children but stack, tabs and disclosure.",
+            "type": "object",
+            "properties": {
+                "style": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "properties": {
+                        "fg": {
+                            "$ref": "#/$defs/color"
+                        },
+                        "bg": {
+                            "$ref": "#/$defs/color"
+                        },
+                        "bold": {
+                            "type": "boolean"
+                        },
+                        "dim": {
+                            "type": "boolean"
+                        },
+                        "italic": {
+                            "type": "boolean"
+                        },
+                        "underline": {
+                            "type": "boolean"
+                        },
+                        "strike": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "hidden": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "disabled": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "focusable": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "grow": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "minimum": 0
+                },
+                "padding": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "integer"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                },
+                "border": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ]
+                },
+                "label": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "direction": {
+                    "enum": [
+                        "vertical",
+                        "horizontal",
+                        null
+                    ],
+                    "x-kinds": [
+                        "stack"
+                    ]
+                },
+                "gap": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "stack"
+                    ]
+                },
+                "text": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "label",
+                        "progress",
+                        "spinner",
+                        "button",
+                        "checkbox"
+                    ]
+                },
+                "runs": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "$ref": "#/$defs/run"
+                    },
+                    "x-kinds": [
+                        "label"
+                    ],
+                    "description": "Styled text; wins over text."
+                },
+                "align": {
+                    "enum": [
+                        "left",
+                        "center",
+                        "right",
+                        null
+                    ],
+                    "x-kinds": [
+                        "label"
+                    ]
+                },
+                "value": {
+                    "type": [
+                        "string",
+                        "number",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "textfield",
+                        "textarea",
+                        "password",
+                        "number",
+                        "slider"
+                    ],
+                    "description": "The text of a textfield, textarea, password or number (as typed, valid or not); the number of a slider."
+                },
+                "prompt": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "textfield"
+                    ]
+                },
+                "maxLength": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "textfield",
+                        "textarea",
+                        "password"
+                    ],
+                    "description": "The most characters (Unicode code points) the value may have, like maxlength: a host may stop typing and cut pastes at it; the application cuts a longer value it gets, and sends back the value it keeps."
+                },
+                "min": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "number",
+                        "slider"
+                    ],
+                    "description": "The lowest value; null: none (number), 0 (slider)."
+                },
+                "max": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "number",
+                        "slider"
+                    ],
+                    "description": "The highest value; null: none (number), 100 (slider)."
+                },
+                "step": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "exclusiveMinimum": 0,
+                    "x-kinds": [
+                        "number",
+                        "slider"
+                    ],
+                    "description": "The step from min (from 0 without min) that stepping, or moving a slider, goes by; null: 1. A slider takes the values on a step only; a number field takes what is typed, Up and Down and its stepper going to the next step."
+                },
+                "minLines": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "textarea"
+                    ]
+                },
+                "maxLines": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "textarea"
+                    ]
+                },
+                "items": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "list"
+                    ],
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "label"
+                        ],
+                        "properties": {
+                            "label": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "selected": {
+                    "type": [
+                        "integer",
+                        "array",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "list",
+                        "popup",
+                        "listbox"
+                    ],
+                    "items": {
+                        "type": "integer"
+                    },
+                    "description": "list, popup: the index of the selected row or choice. listbox: the indexes of the selected choices, one at most without multiple."
+                },
+                "multiple": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "list",
+                        "listbox"
+                    ]
+                },
+                "checked": {
+                    "type": [
+                        "array",
+                        "boolean",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "integer"
+                    },
+                    "x-kinds": [
+                        "list",
+                        "checkbox"
+                    ],
+                    "description": "list: the checked indexes of a multiple list. checkbox: whether it is checked."
+                },
+                "rows": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "form"
+                    ],
+                    "description": "One row per setting: a choice among choices, the value shown as text when it has none. setting sends a value of its choices only.",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "label",
+                            "value"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "label": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            },
+                            "description": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "choices": {
+                                "type": [
+                                    "array",
+                                    "null"
+                                ],
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "readOnly": {
+                                "type": [
+                                    "boolean",
+                                    "null"
+                                ],
+                                "description": "Whether the user cannot change the value, which only the application changes; null: false. A row without choices is read-only."
+                            }
+                        }
+                    }
+                },
+                "tabs": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "x-kinds": [
+                        "tabs"
+                    ],
+                    "description": "Tab labels; the children of the node are the tab panes, in order."
+                },
+                "active": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "tabs"
+                    ]
+                },
+                "position": {
+                    "enum": [
+                        "top",
+                        "bottom",
+                        "left",
+                        "right",
+                        null
+                    ],
+                    "x-kinds": [
+                        "tabs"
+                    ]
+                },
+                "summary": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "disclosure"
+                    ]
+                },
+                "description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "disclosure"
+                    ]
+                },
+                "expanded": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "disclosure"
+                    ]
+                },
+                "progress": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 1,
+                    "x-kinds": [
+                        "progress"
+                    ],
+                    "description": "Null: indeterminate."
+                },
+                "running": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "spinner"
+                    ]
+                },
+                "cancellable": {
+                    "type": [
+                        "boolean",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "spinner"
+                    ]
+                },
+                "lines": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/$defs/run"
+                        }
+                    },
+                    "x-kinds": [
+                        "canvas"
+                    ]
+                },
+                "columns": {
+                    "type": [
+                        "integer",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "canvas"
+                    ],
+                    "description": "Width the lines were drawn for."
+                },
+                "cursor": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "integer"
+                    },
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "x-kinds": [
+                        "canvas"
+                    ],
+                    "description": "[row, column] of the text cursor, or null."
+                },
+                "group": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "x-kinds": [
+                        "checkbox"
+                    ],
+                    "description": "A radio button of this group: checking it is a choice among the checkboxes of the same group and parent; the application unchecks the others."
+                },
+                "choices": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "x-kinds": [
+                        "popup",
+                        "listbox"
+                    ],
+                    "description": "The labels of the choices; selected is the index of the one shown (popup), or the indexes of those selected (listbox)."
+                },
+                "keys": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "string"
+                    },
+                    "x-kinds": [
+                        "canvas"
+                    ],
+                    "description": "Key ids (tab, shift+tab) that the canvas and the controls placed on it send as key instead of using them, like Tab to move the focus the way the application orders it."
+                },
+                "place": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "integer"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "description": "On a child of a canvas, any kind but canvas: where the native control is drawn over the canvas, as [row, column, columns, rows] in cells of the canvas. Only sent to a host with the canvas-controls capability."
+                },
+                "clip": {
+                    "type": [
+                        "array",
+                        "null"
+                    ],
+                    "items": {
+                        "type": "integer"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4,
+                    "description": "On a placed child: the part of it shown, as [row, column, columns, rows] in cells of the canvas, the rest cut off like by a scroll area; null: all of it."
+                }
+            }
+        },
+        "focus": {
+            "description": "Application → host: give the keyboard focus to a node, or to no node.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "node"
+            ],
+            "properties": {
+                "type": {
+                    "const": "focus"
+                },
+                "node": {
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/nodeId"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            }
+        },
+        "window": {
+            "description": "Application → host: window title and progress (dock or taskbar).",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "const": "window"
+                },
+                "title": {
+                    "description": "The title of the window; null goes back to the title the host gives it, while a message without a title leaves it as it is.",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "progress": {
+                    "type": [
+                        "object",
+                        "null"
+                    ],
+                    "required": [
+                        "state"
+                    ],
+                    "properties": {
+                        "state": {
+                            "enum": [
+                                "normal",
+                                "indeterminate",
+                                "paused",
+                                "error"
+                            ]
+                        },
+                        "value": {
+                            "type": [
+                                "number",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 1
+                        }
+                    }
+                }
+            }
+        },
+        "notify": {
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "title"
+            ],
+            "properties": {
+                "type": {
+                    "const": "notify"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "body": {
+                    "type": "string"
+                }
+            }
+        },
+        "beep": {
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "const": "beep"
+                }
+            }
+        },
+        "cursor": {
+            "description": "Application → host, to a host with the pointer capability: the mouse pointer to show over a canvas, a CSS cursor keyword for what is under the pointer, from the pointer messages of that canvas, like pointer over a link or text over a field drawn there. Sent when it changes. The host shows it while the pointer is over the surface of that canvas, not over a control placed on it, which keeps its own, and goes back to its own pointer once it left the canvas; it shows the closest shape it has for a keyword (an arrow for one it has none for), and none hides the pointer where the toolkit can.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "node",
+                "shape"
+            ],
+            "properties": {
+                "type": {
+                    "const": "cursor"
+                },
+                "node": {
+                    "$ref": "#/$defs/nodeId"
+                },
+                "shape": {
+                    "enum": [
+                        "default",
+                        "none",
+                        "context-menu",
+                        "help",
+                        "pointer",
+                        "progress",
+                        "wait",
+                        "cell",
+                        "crosshair",
+                        "text",
+                        "vertical-text",
+                        "alias",
+                        "copy",
+                        "move",
+                        "no-drop",
+                        "not-allowed",
+                        "grab",
+                        "grabbing",
+                        "all-scroll",
+                        "col-resize",
+                        "row-resize",
+                        "n-resize",
+                        "e-resize",
+                        "s-resize",
+                        "w-resize",
+                        "ne-resize",
+                        "nw-resize",
+                        "se-resize",
+                        "sw-resize",
+                        "ew-resize",
+                        "ns-resize",
+                        "nesw-resize",
+                        "nwse-resize",
+                        "zoom-in",
+                        "zoom-out"
+                    ]
+                }
+            }
+        },
+        "contextmenu": {
+            "description": "Application → host, to a host with the contextmenu capability: a menu to show at a cell of a canvas, in answer to the press of the right button there (a host sends the gesture that opens context menus on its platform, like Control-click on macOS, as that press). row and column as in pointer. The host shows it as its native context menu, its items in order: a separator for one with separator true; one with enabled false greyed out. Choosing an item sends contextmenu-select with its id; one with role paste does what Paste does in the host instead: it sends the text of the clipboard in a paste message, and nothing when the clipboard holds no text. Dismissing the menu sends nothing. A menu that comes when the pointer left the canvas, or after another one was shown, replaces it or is ignored.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "node",
+                "row",
+                "column",
+                "items"
+            ],
+            "properties": {
+                "type": {
+                    "const": "contextmenu"
+                },
+                "node": {
+                    "$ref": "#/$defs/nodeId"
+                },
+                "row": {
+                    "type": "integer"
+                },
+                "column": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "oneOf": [
+                            {
+                                "type": "object",
+                                "required": [
+                                    "separator"
+                                ],
+                                "not": {
+                                    "anyOf": [
+                                        {
+                                            "required": [
+                                                "id"
+                                            ]
+                                        },
+                                        {
+                                            "required": [
+                                                "label"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "properties": {
+                                    "separator": {
+                                        "const": true
+                                    }
+                                }
+                            },
+                            {
+                                "type": "object",
+                                "required": [
+                                    "id",
+                                    "label"
+                                ],
+                                "not": {
+                                    "properties": {
+                                        "separator": {
+                                            "const": true
+                                        }
+                                    },
+                                    "required": [
+                                        "separator"
+                                    ]
+                                },
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "label": {
+                                        "type": "string"
+                                    },
+                                    "enabled": {
+                                        "type": "boolean"
+                                    },
+                                    "role": {
+                                        "enum": [
+                                            "paste"
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "clipboard": {
+            "description": "Application → host, to a host with the clipboard capability: text to put on the clipboard, like Copy.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "text"
+            ],
+            "properties": {
+                "type": {
+                    "const": "clipboard"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "menu": {
+            "description": "Application → host: the application menus. The host adds its own About and Quit items as configured.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "menus"
+            ],
+            "properties": {
+                "type": {
+                    "const": "menu"
+                },
+                "menus": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "title",
+                            "items"
+                        ],
+                        "properties": {
+                            "title": {
+                                "type": "string"
+                            },
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "label": {
+                                            "type": "string"
+                                        },
+                                        "shortcut": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "A Tui key id, like ctrl+s."
+                                        },
+                                        "separator": {
+                                            "type": "boolean"
+                                        },
+                                        "enabled": {
+                                            "type": "boolean"
+                                        },
+                                        "checked": {
+                                            "type": [
+                                                "boolean",
+                                                "null"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "closeReply": {
+            "description": "Application → host, answer to close. accept false keeps the window open.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type",
+                "accept"
+            ],
+            "properties": {
+                "type": {
+                    "const": "close-reply"
+                },
+                "accept": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "bye": {
+            "description": "Application → host: the application stops; the host closes the window once the process exits.",
+            "x-direction": "app-to-host",
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "const": "bye"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "resize": {
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "columns",
+                "rows"
+            ],
+            "properties": {
+                "type": {
+                    "const": "resize"
+                },
+                "columns": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "rows": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "event": {
+            "description": "Host → application: the user acted on a native control. change: value is the text (textfield, textarea, password, number: as typed, valid or not), or the number (slider). submit: value is the text, if any. cancel: no value. select: value is the index (list, popup), the list of checked indexes for a multiple list, or the list of selected indexes (listbox). toggle: value is the new expanded state (disclosure), or the new checked state (checkbox). tab: value is the index. setting: value is {id, value}. press: a button was pressed, no value. focus: the node took the focus.",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "node",
+                "name"
+            ],
+            "properties": {
+                "type": {
+                    "const": "event"
+                },
+                "node": {
+                    "$ref": "#/$defs/nodeId"
+                },
+                "name": {
+                    "enum": [
+                        "change",
+                        "submit",
+                        "cancel",
+                        "select",
+                        "toggle",
+                        "tab",
+                        "setting",
+                        "press",
+                        "focus"
+                    ]
+                },
+                "value": {}
+            }
+        },
+        "key": {
+            "description": "Host → application: a key press the focused native control did not handle, or any key press in a canvas. key is a Tui key id (enter, ctrl+s, shift+tab, a, f5...); text is the text it types, if any. Text an input method commits in a canvas (a dead key and a letter, a word of a Chinese or Japanese input method, an emoji from the picker) is sent like typed: one key per character, the character as key (lowercase, with shift+ for an uppercase letter) and as text; what it is still composing is shown by the host only.",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "key"
+            ],
+            "properties": {
+                "type": {
+                    "const": "key"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        },
+        "paste": {
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "text"
+            ],
+            "properties": {
+                "type": {
+                    "const": "paste"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "pointer": {
+            "description": "Host → application, from a host with the pointer capability: what the mouse or the trackpad does on the surface of a canvas, not on a control placed over it, which handles it itself. row and column: the cell under the pointer, from the top-left corner of the canvas (the position divided by the cell size, rounded down); while a button is held, a drag, they may be past its edges. action: press and release of a button; move, when the pointer goes to another cell, with the button held, if any; leave, when it leaves the canvas or goes onto a control placed on it with no button held, and when a button is released there; wheel, rows (down, negative up) and columns (right, negative left) to scroll by, a trackpad's precise deltas added up and sent once they make whole cells, a line of a mouse wheel being one row. button: left, middle or right, for press and release, and move while it is held. button and modifiers are always sent, button null for leave, wheel and a move with no button held; modifiers: the modifier keys held, as in key ids (ctrl, shift, alt, super), in that order; rows and columns are sent with wheel only. A press on a canvas focuses it like before: the host sends event focus for it first, when it takes the focus.",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "node",
+                "action",
+                "row",
+                "column",
+                "button",
+                "modifiers"
+            ],
+            "properties": {
+                "type": {
+                    "const": "pointer"
+                },
+                "node": {
+                    "$ref": "#/$defs/nodeId"
+                },
+                "action": {
+                    "enum": [
+                        "press",
+                        "release",
+                        "move",
+                        "leave",
+                        "wheel"
+                    ]
+                },
+                "row": {
+                    "type": "integer"
+                },
+                "column": {
+                    "type": "integer"
+                },
+                "button": {
+                    "enum": [
+                        "left",
+                        "middle",
+                        "right",
+                        null
+                    ]
+                },
+                "modifiers": {
+                    "type": "array",
+                    "items": {
+                        "enum": [
+                            "ctrl",
+                            "shift",
+                            "alt",
+                            "super"
+                        ]
+                    }
+                },
+                "rows": {
+                    "type": "integer"
+                },
+                "columns": {
+                    "type": "integer"
+                }
+            }
+        },
+        "rects": {
+            "description": "Host → application, after each layout: after drawing a patch, and when the window is resized or a control changes size on its own. Where nodes are, in cells, as [row, column, columns, rows].",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "rects"
+            ],
+            "properties": {
+                "type": {
+                    "const": "rects"
+                },
+                "rects": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                    }
+                }
+            }
+        },
+        "menuSelect": {
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "id"
+            ],
+            "properties": {
+                "type": {
+                    "const": "menu-select"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "contextmenuSelect": {
+            "description": "Host → application: the item of the last contextmenu the user chose, by its id.",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "id"
+            ],
+            "properties": {
+                "type": {
+                    "const": "contextmenu-select"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "appearance": {
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "value"
+            ],
+            "properties": {
+                "type": {
+                    "const": "appearance"
+                },
+                "value": {
+                    "enum": [
+                        "light",
+                        "dark"
+                    ]
+                }
+            }
+        },
+        "open": {
+            "description": "Host → application: files or URLs to open (file associations, URL schemes, dropped files).",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type",
+                "paths"
+            ],
+            "properties": {
+                "type": {
+                    "const": "open"
+                },
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "close": {
+            "description": "Host → application: the user asked to close the window. The application answers close-reply within 4 seconds, or the host asks the user whether to force quit.",
+            "x-direction": "host-to-app",
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "const": "close"
+                }
+            }
+        }
+    }
+}

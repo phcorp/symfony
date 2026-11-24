@@ -110,6 +110,11 @@ class InputWidget extends AbstractWidget implements FocusableInterface
         return $this;
     }
 
+    public function getPrompt(): string
+    {
+        return $this->prompt;
+    }
+
     /**
      * @return $this
      */

@@ -810,4 +810,13 @@ class TabsWidgetTest extends TestCase
         $focused = $tabs->render(new RenderContext(40, 10));
         $this->assertStringContainsString("\x1b[48;", $focused[1]);
     }
+
+    public function testGetPosition()
+    {
+        $tabs = new TabsWidget();
+        $this->assertSame(TabPosition::Top, $tabs->getPosition());
+
+        $tabs->setPosition(TabPosition::Left);
+        $this->assertSame(TabPosition::Left, $tabs->getPosition());
+    }
 }
