@@ -5072,7 +5072,8 @@ final class CssStyleSheet implements ScrollStateAwareInterface, IntrinsicSizeAwa
         $after = self::paddedPseudo($after, $afterStyle);
         $formats = [];
         $index = 0;
-        $this->formatNodes($widget->getInlineNodes(), $id, $declarations, $dynamic, $index, $formats);
+        $lastConversion = null;
+        $this->formatNodes($widget->getInlineNodes(), $id, $declarations, $dynamic, $index, $formats, $lastConversion);
         // The language of the block again, not that of its last inline element, for its hyphenation
         $this->quoteLanguage = $this->languages[(string) $id] ?? '';
         $indent = isset($computed['text-indent']) ? self::textIndent($this->substitute($computed['text-indent'], $computed), $this->media ?? new MediaContext()) : null;
@@ -5095,8 +5096,9 @@ final class CssStyleSheet implements ScrollStateAwareInterface, IntrinsicSizeAwa
      * @param list<InlineNode>                                                                                                          $nodes
      * @param array{array<int, list<int>>, array<int, list<int>>, array<int, array<int, list<int>>>, array<int, array<int, list<int>>>} $dynamic
      * @param array<int, InlineFormat>                                                                                                  $formats
+     * @param array{array, InlineFormat}|null                                                                                           $lastConversion
      */
-    private function formatNodes(array $nodes, int $id, int $parentDeclarations, array $dynamic, int &$index, array &$formats): void
+    private function formatNodes(array $nodes, int $id, int $parentDeclarations, array $dynamic, int &$index, array &$formats, ?array &$lastConversion): void
     {
         $siblings = \count(array_filter($nodes, static fn (InlineNode $node) => !$node->isText()));
         $sibling = 0;
@@ -5118,7 +5120,7 @@ final class CssStyleSheet implements ScrollStateAwareInterface, IntrinsicSizeAwa
             }
             $this->enterCounterScope();
             $before = $hidden ? null : $this->generatedContent($pseudoRules, 'before', $declarations, $node->attributes, $this->nativeInlineSubjects[$id][$nodeIndex] ?? null);
-            $this->formatNodes($node->children, $id, $declarations, $dynamic, $index, $formats);
+            $this->formatNodes($node->children, $id, $declarations, $dynamic, $index, $formats, $lastConversion);
             // Its own language again, not that of its last child, for its quotes and its hyphenation
             $this->quoteLanguage = $this->languages[$id.':'.$nodeIndex] ?? '';
             $after = $hidden ? null : $this->generatedContent($pseudoRules, 'after', $declarations, $node->attributes, $this->nativeInlineSubjects[$id][$nodeIndex] ?? null);
@@ -5153,9 +5155,15 @@ final class CssStyleSheet implements ScrollStateAwareInterface, IntrinsicSizeAwa
                 [$before, $border] = [$triangle[0], null];
                 $beforeStyle = null !== $triangle[1] ? $this->computeStyle($this->inherit(['color' => $triangle[1]], $computed), $this->media ?? new MediaContext()) : null;
             }
+            $conversionInput = [$computed, $inlineStyle, $hidden, $before, $after, $beforeStyle, $afterStyle, $border, $padding, $margin, $this->media, $this->quoteLanguage, $this->hyphenator, $this->functions, $this->parser];
+            if (null !== $lastConversion && $conversionInput === $lastConversion[0]) {
+                $formats[$nodeIndex] = $lastConversion[1];
+                continue;
+            }
             // The vertical line of the border pattern on that side (column 0 on the left, 2 on the right), in its color
             $line = static fn (int $width, int $side, int $column): ?string => $width > 0 && null !== $border ? (new Style(null, null, null, $border->sideColors[$side] ?? $border->color ?? $inlineStyle->getColor()))->apply($border->getSidePattern($side)->getChars()[1][$column] ?: '│') : null;
             $formats[$nodeIndex] = new InlineFormat($inlineStyle, $hidden, $before, $after, self::textTransform($computed), self::whiteSpace($computed), null, 0, 0, isset($computed['letter-spacing']) ? self::letterSpacing($this->substitute($computed['letter-spacing'], $computed), $this->media ?? new MediaContext()) ?? 0 : 0, self::script($computed), null, 0, false, true, false, 8, [min(20, $margin->left ?? 0), min(20, $padding->left ?? 0), min(20, $padding->right ?? 0), min(20, $margin->right ?? 0)], $line($border->left ?? 0, 3, 0), $line($border->right ?? 0, 1, 2), isset($computed['word-spacing']) ? self::letterSpacing($this->substitute($computed['word-spacing'], $computed), $this->media ?? new MediaContext()) ?? 0 : 0, null, 'auto', null, 0.0, false, false, null, 'clone' === strtolower(trim($computed['box-decoration-break'] ?? $computed['-webkit-box-decoration-break'] ?? '')), false, '-', [], [0 => 0, 1 => 0], null, null, 'rtl' === strtolower(trim($computed['direction'] ?? '')), $beforeStyle, $afterStyle, null, self::rubyDisplay($computed['display'] ?? ''), 'under' === strtolower(trim($computed['ruby-position'] ?? '')), self::rubyAlign($computed['ruby-align'] ?? ''), 2, 2, $this->hyphenator($computed), self::unicodeBidi($computed), false, false, ($emphasis = $this->emphasis($computed))[0], $emphasis[1], $emphasis[2], [], null, null, (bool) preg_match('/^inline-block\b|^inline\s+flow-root\b/i', trim($computed['display'] ?? '')));
+            $lastConversion = [$conversionInput, $formats[$nodeIndex]];
         }
     }
 

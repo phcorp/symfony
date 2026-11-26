@@ -605,30 +605,38 @@ final class StyleResolver
                     }
                 }
                 $variableInputs = null !== $timeline && ($hasCustomKeyframes && (isset($values['animation']) || isset($values['animation-name'])) || (isset($values['transition']) || isset($values['transition-property'])) && array_any(array_keys($values), static fn (string $property): bool => str_starts_with($property, '--'))) ? $values : null;
-                [$values, $resolvedValues, $invalidRegistered] = $this->resolveRegisteredValues($values, $registered, $inherited);
+                $plainPreparation = self::hasPlainPreparation($values, $registered, $winners[$element] ?? []);
+                if ($plainPreparation) {
+                    $resolvedValues = $values;
+                    $invalidRegistered = [];
+                } else {
+                    [$values, $resolvedValues, $invalidRegistered] = $this->resolveRegisteredValues($values, $registered, $inherited);
+                }
                 $attributes = [];
                 foreach ($element->attributes as $attribute) {
                     $attributes[$attribute->name] = $attribute->value;
                 }
-                $resolvedValues = $this->resolveElementValues($resolvedValues, $width, $height, $element, $parent, $attributes, $siblingPositions);
+                if (!$plainPreparation) {
+                    $resolvedValues = $this->resolveElementValues($resolvedValues, $width, $height, $element, $parent, $attributes, $siblingPositions);
 
-                foreach ($values as $property => $value) {
-                    $resolved = $resolvedValues[$property] ?? null;
-                    $source = ($winners[$element] ?? [])[$property][2] ?? $property;
-                    if (null !== $resolved && isset(($winners[$element] ?? [])[$property]) && ($resolvedValues[$source] ?? null) !== (($winners[$element] ?? [])[$property][3] ?? null)) {
-                        $resolved = DeclarationExpander::resolvedValue($property, $source, $resolvedValues[$source] ?? $resolved, fn (string $value): bool => \is_array($this->parseColor($value)));
-                    }
-                    if (null === $resolved) {
-                        if (isset($inherited[$property]) && \in_array($property, self::INHERITED, true)) {
-                            $values[$property] = $inherited[$property];
-                            if (null !== $timeline) {
-                                $inheritedProperties[$property] = true;
+                    foreach ($values as $property => $value) {
+                        $resolved = $resolvedValues[$property] ?? null;
+                        $source = ($winners[$element] ?? [])[$property][2] ?? $property;
+                        if (null !== $resolved && isset(($winners[$element] ?? [])[$property]) && ($resolvedValues[$source] ?? null) !== (($winners[$element] ?? [])[$property][3] ?? null)) {
+                            $resolved = DeclarationExpander::resolvedValue($property, $source, $resolvedValues[$source] ?? $resolved, fn (string $value): bool => \is_array($this->parseColor($value)));
+                        }
+                        if (null === $resolved) {
+                            if (isset($inherited[$property]) && \in_array($property, self::INHERITED, true)) {
+                                $values[$property] = $inherited[$property];
+                                if (null !== $timeline) {
+                                    $inheritedProperties[$property] = true;
+                                }
+                            } else {
+                                unset($values[$property]);
                             }
                         } else {
-                            unset($values[$property]);
+                            $values[$property] = $resolved;
                         }
-                    } else {
-                        $values[$property] = $resolved;
                     }
                 }
                 $logicalValues = null !== $variableInputs ? $values : null;
@@ -982,6 +990,30 @@ final class StyleResolver
     public function getPseudoStyle(\Dom\Element $element, string $name): array
     {
         return ($this->pseudoStyles[$element] ?? [])[$name] ?? [];
+    }
+
+    private static function hasPlainPreparation(array $values, array $registered, array $winners): bool
+    {
+        if ([] !== $registered || \count($values) > 32 || \count($winners) > 32) {
+            return false;
+        }
+        $bytes = 0;
+        foreach ($values as $property => $value) {
+            if (!\is_string($property) || !\is_string($value) || \strlen($property) > 128 || \strlen($value) > 256 || ($bytes += \strlen($property) + \strlen($value)) > 4096 || str_contains($value, '(') || false !== stripos($value, 'sibling-') || null !== \ReflectionReference::fromArrayElement($values, $property)) {
+                return false;
+            }
+        }
+        foreach ($winners as $property => $winner) {
+            if (!\is_array($winner)) {
+                return false;
+            }
+            $source = $winner[2] ?? $property;
+            if (!\is_string($source) || !isset($values[$source]) || $values[$source] !== ($winner[3] ?? null)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function resolveRegisteredValues(array $values, array $registered, array $inherited): array
