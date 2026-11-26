@@ -517,37 +517,23 @@ final class LayoutEngine
      */
     public function tableOrder(array $children): array
     {
-        $header = $footer = $first = $last = null;
+        $roles = [];
         foreach ($children as $index => $child) {
             $style = $this->widgetRenderer->resolveComputedStyle($child);
-            if (TableRole::Row !== $role = $style->getTableRole()) {
-                if (TableRole::RowGroup !== $role || $style->getHidden()) {
-                    continue;
-                }
-                $place = $style->getRowGroupPlace();
-                if (-1 === $place && null === $header) {
-                    $header = $index;
-                } elseif (1 === $place && null === $footer) {
-                    $footer = $index;
-                }
-            }
-            $first ??= $index;
-            $last = $index;
+            $roles[$index] = match (true) {
+                TableRole::Row === $style->getTableRole() => 'row',
+                TableRole::RowGroup !== $style->getTableRole() || $style->getHidden() => null,
+                -1 === $style->getRowGroupPlace() => 'header',
+                1 === $style->getRowGroupPlace() => 'footer',
+                default => 'row',
+            };
         }
-        if (null === $header && null === $footer) {
+        if (null === $order = TableGeometry::groupOrder($roles)) {
             return $children;
         }
         $ordered = [];
-        foreach ($children as $index => $child) {
-            if ($index === $first && null !== $header) {
-                $ordered[$header] = $children[$header];
-            }
-            if ($index !== $header && $index !== $footer) {
-                $ordered[$index] = $child;
-            }
-            if ($index === $last && null !== $footer) {
-                $ordered[$footer] = $children[$footer];
-            }
+        foreach ($order as $index) {
+            $ordered[$index] = $children[$index];
         }
 
         return array_is_list($children) ? array_values($ordered) : $ordered;

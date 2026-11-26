@@ -17,6 +17,49 @@ namespace Symfony\Component\HtmlRenderer\Layout;
 final class TableGeometry
 {
     /**
+     * Moves the first header/footer within the first and last row slots, preserving other source positions.
+     *
+     * @template TKey of array-key
+     *
+     * @param array<TKey, 'row'|'header'|'footer'|'both'|null> $roles
+     *
+     * @return list<TKey>|null Source keys in display order, or null when there is no header/footer
+     */
+    public static function groupOrder(array $roles): ?array
+    {
+        $header = $footer = $first = $last = null;
+        foreach ($roles as $index => $role) {
+            if (null === $role) {
+                continue;
+            }
+            if (null === $header && \in_array($role, ['header', 'both'], true)) {
+                $header = $index;
+            } elseif (null === $footer && \in_array($role, ['footer', 'both'], true)) {
+                $footer = $index;
+            }
+            $first ??= $index;
+            $last = $index;
+        }
+        if (null === $header && null === $footer) {
+            return null;
+        }
+        $ordered = [];
+        foreach ($roles as $index => $role) {
+            if ($index === $first && null !== $header) {
+                $ordered[] = $header;
+            }
+            if ($index !== $header && $index !== $footer) {
+                $ordered[] = $index;
+            }
+            if ($index === $last && null !== $footer) {
+                $ordered[] = $footer;
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
      * Specified columns keep their sizes; unspecified columns share the remaining space.
      *
      * @param array<int, float|int> $given

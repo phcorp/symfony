@@ -2868,29 +2868,17 @@ final class LayoutEngine
                 $groups[] = ['box' => $child, 'rows' => $rows];
             }
         }
-        $header = $footer = null;
+        $roles = [];
         foreach ($groups as $index => $group) {
             $node = $group['box']?->node;
             $display = $group['box']?->display;
-            if (null === $header && ('table-header-group' === $display || $node instanceof \Dom\Element && 'thead' === $node->localName)) {
-                $header = $index;
-            } elseif (null === $footer && ('table-footer-group' === $display || $node instanceof \Dom\Element && 'tfoot' === $node->localName)) {
-                $footer = $index;
-            }
+            $header = 'table-header-group' === $display || $node instanceof \Dom\Element && 'thead' === $node->localName;
+            $footer = 'table-footer-group' === $display || $node instanceof \Dom\Element && 'tfoot' === $node->localName;
+            $roles[$index] = $header ? ($footer ? 'both' : 'header') : ($footer ? 'footer' : 'row');
         }
-        $ordered = [];
-        if (null !== $header) {
-            $ordered[] = $groups[$header];
+        if (null !== $order = TableGeometry::groupOrder($roles)) {
+            $groups = array_map(static fn (int $index): array => $groups[$index], $order);
         }
-        foreach ($groups as $index => $group) {
-            if ($index !== $header && $index !== $footer) {
-                $ordered[] = $group;
-            }
-        }
-        if (null !== $footer) {
-            $ordered[] = $groups[$footer];
-        }
-        $groups = $ordered;
         $rows = $ends = [];
         foreach ($groups as $group) {
             $end = \count($rows) + \count($group['rows']);
