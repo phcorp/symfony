@@ -56,6 +56,7 @@ final class LayoutEngine
     private bool $hasPickers = false;
     private bool $hasAnchors = false;
     private int $remainingJustificationFragments = 100000;
+    private int $remainingInlineFragments = 100000;
     private Box $rootBox;
     private \WeakMap $marginCache;
     private float $viewportWidth = 0.0;
@@ -80,6 +81,7 @@ final class LayoutEngine
         $this->hasPickers = false;
         $this->hasAnchors = false;
         $this->remainingJustificationFragments = 100000;
+        $this->remainingInlineFragments = 100000;
         $this->rootBox = $box;
         $this->marginCache = new \WeakMap();
         $this->viewportWidth = $width;
@@ -497,7 +499,7 @@ final class LayoutEngine
                 } elseif ($inline) {
                     $flowLineWidth = $innerWidth;
                 }
-                if ($inline && (\in_array($child->style['overflow-wrap'] ?? '', ['anywhere', 'break-word'], true) && $intrinsic > $lineEnd - $lineStart || $handlesFloatLine && $intrinsic <= $innerWidth && $intrinsic > $lineEnd - $inlineX || ($inlineX > $lineStart || '1' === ($child->style['-renderer-highlight'] ?? null)) && $intrinsic > $lineEnd - $inlineX || isset($boxes[$childIndex + 1]) && InlineFormatting::joins($child, $boxes[$childIndex + 1]) && $intrinsic + $this->inlineOuterWidth($boxes[$childIndex + 1], $innerWidth, $this->font($boxes[$childIndex + 1]->style, $style)) > $lineEnd - $inlineX) && null !== $parts = InlineFormatting::split($child)) {
+                if ($inline && (\in_array($child->style['overflow-wrap'] ?? '', ['anywhere', 'break-word'], true) && $intrinsic > $lineEnd - $lineStart || $handlesFloatLine && $intrinsic <= $innerWidth && $intrinsic > $lineEnd - $inlineX || ($inlineX > $lineStart || '1' === ($child->style['-renderer-highlight'] ?? null)) && $intrinsic > $lineEnd - $inlineX || isset($boxes[$childIndex + 1]) && InlineFormatting::joins($child, $boxes[$childIndex + 1]) && $intrinsic + $this->inlineOuterWidth($boxes[$childIndex + 1], $innerWidth, $this->font($boxes[$childIndex + 1]->style, $style)) > $lineEnd - $inlineX) && null !== $parts = InlineFormatting::split($child, false, $this->remainingInlineFragments)) {
                     if (\count($parts) > 1) {
                         foreach ($parts as $part) {
                             $inlineParts[$part] = true;
@@ -522,7 +524,7 @@ final class LayoutEngine
                 if ($inline && !$joinedPrevious) {
                     for ($nextIndex = $childIndex + 1; isset($boxes[$nextIndex]) && InlineFormatting::joins($boxes[$nextIndex - 1], $boxes[$nextIndex]); ++$nextIndex) {
                         $nextBox = $boxes[$nextIndex];
-                        if (null !== $nextParts = InlineFormatting::split($nextBox)) {
+                        if (null !== $nextParts = InlineFormatting::split($nextBox, false, $this->remainingInlineFragments)) {
                             if (\count($nextParts) > 1) {
                                 array_splice($boxes, $nextIndex, 1, $nextParts);
                                 foreach ($nextParts as $part) {
@@ -572,7 +574,7 @@ final class LayoutEngine
                 if ($inline && !$joinedPrevious && \in_array($child->style['overflow-wrap'] ?? '', ['anywhere', 'break-word'], true) && $runWidth > $lineEnd - $lineStart) {
                     $emergencyParts = [];
                     for ($index = $childIndex; $index < $runEnd; ++$index) {
-                        array_push($emergencyParts, ...(InlineFormatting::split($boxes[$index], true) ?? [$boxes[$index]]));
+                        array_push($emergencyParts, ...(InlineFormatting::split($boxes[$index], true, $this->remainingInlineFragments) ?? [$boxes[$index]]));
                     }
                     if (\count($emergencyParts) > $runEnd - $childIndex) {
                         foreach ($emergencyParts as $part) {
@@ -3059,6 +3061,9 @@ final class LayoutEngine
         }
         if (null !== $contained = $this->containedSize($box->style, false, $this->viewportWidth, $font)) {
             return $contained;
+        }
+        if ($box->replacedContent instanceof \Symfony\Component\HtmlRenderer\Content\FragmentableContentInterface && (\in_array($box->style['white-space'] ?? 'normal', ['nowrap', 'pre'], true) || 'anywhere' !== ($box->style['overflow-wrap'] ?? '') && 'break-all' !== ($box->style['word-break'] ?? 'normal'))) {
+            return $this->intrinsicWidth($box, $font);
         }
         if (null !== $box->replacedContent) {
             return null !== $box->replacedContent->getIntrinsicSize()->aspectRatio ? min($box->replacedContent->getIntrinsicSize()->minimumWidth, $this->imageIntrinsicWidth($box, $font, $box->replacedContent)) : $box->replacedContent->getIntrinsicSize()->minimumWidth;

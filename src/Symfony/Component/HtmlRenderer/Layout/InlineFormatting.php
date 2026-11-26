@@ -22,8 +22,53 @@ final class InlineFormatting
      *
      * @return list<Box>|null
      */
-    public static function split(Box $box, bool $emergency = false): ?array
+    public static function split(Box $box, bool $emergency = false, ?int &$remaining = null): ?array
     {
+        if ($box->replacedContent instanceof \Symfony\Component\HtmlRenderer\Content\FragmentableContentInterface) {
+            if (!\in_array($box->display, ['inline', 'inline-block'], true) || 'static' !== ($box->style['position'] ?? 'static') || 'none' !== ($box->style['float'] ?? 'none') || 'none' !== ($box->style['transform'] ?? 'none') || null !== $box->selection || null !== $box->topLayer || !\in_array($box->style['white-space'] ?? 'normal', ['normal', 'pre-line'], true) || !self::undecorated($box)) {
+                return null;
+            }
+            if (!\in_array($box->style['outline-style'] ?? 'none', ['none', 'hidden'], true) && !\in_array($box->style['outline-width'] ?? 'medium', ['0', '0px'], true)) {
+                return null;
+            }
+            foreach (['width', 'height', 'inline-size', 'block-size', 'aspect-ratio'] as $property) {
+                if ('auto' !== ($box->style[$property] ?? 'auto')) {
+                    return null;
+                }
+            }
+            foreach (['min-width', 'min-height', 'min-inline-size', 'min-block-size'] as $property) {
+                if (!\in_array($box->style[$property] ?? 'auto', ['auto', '0', '0px', '0%'], true)) {
+                    return null;
+                }
+            }
+            foreach (['max-width', 'max-height', 'max-inline-size', 'max-block-size'] as $property) {
+                if ('none' !== ($box->style[$property] ?? 'none')) {
+                    return null;
+                }
+            }
+            if ('break-all' !== ($box->style['word-break'] ?? 'normal') && !($emergency && \in_array($box->style['overflow-wrap'] ?? '', ['anywhere', 'break-word'], true))) {
+                return [$box];
+            }
+            $providers = $box->replacedContent->getInlineFragments();
+            if (null === $providers) {
+                return [$box];
+            }
+            if (!array_is_list($providers) || !$providers) {
+                throw new \UnexpectedValueException('Inline fragments must be a non-empty list of content providers.');
+            }
+            $remaining ??= 100000;
+            if (\count($providers) > $remaining) {
+                throw new \LengthException('Inline fragmentation exceeds the box count limit.');
+            }
+            foreach ($providers as $provider) {
+                if (!$provider instanceof \Symfony\Component\HtmlRenderer\Content\ReplacedContentInterface) {
+                    throw new \UnexpectedValueException('Inline fragments must contain content providers.');
+                }
+            }
+            $remaining -= \count($providers);
+
+            return array_map(static fn ($provider): Box => new Box($box->node, 'inline-block', $box->style, [], null, null, null, $box->pseudoElement, null, null, null, new \Symfony\Component\HtmlRenderer\Content\AtomicContent($provider)), $providers);
+        }
         if (!\in_array($box->display, ['inline', 'ruby'], true) || null !== $box->replacedContent || null !== $box->image || null !== $box->selection || null !== $box->topLayer || 'static' !== ($box->style['position'] ?? 'static') || 'none' !== ($box->style['transform'] ?? 'none') || !\in_array($box->style['white-space'] ?? 'normal', ['normal', 'pre-line'], true)) {
             return null;
         }
@@ -46,16 +91,24 @@ final class InlineFormatting
                 $tokens = $graphemes[0];
             }
             foreach ($tokens as $token) {
+                $remaining ??= 100000;
+                if (--$remaining < 0) {
+                    throw new \LengthException('Inline fragmentation exceeds the box count limit.');
+                }
                 $parts[] = new Box($box->node, $box->display, $style, [], $token, null, null, $box->pseudoElement);
             }
         }
         foreach ($box->children as $child) {
             $atomic = (null !== $child->replacedContent || \in_array($child->display, ['inline-block', 'inline-flex', 'inline-grid', 'inline-table', 'ruby-pair'], true)) && 'static' === ($child->style['position'] ?? 'static') && 'none' === ($child->style['float'] ?? 'none') && null === $child->topLayer;
-            $children = $atomic ? [$child] : self::split($child, $emergency);
+            $children = $atomic && !$child->replacedContent instanceof \Symfony\Component\HtmlRenderer\Content\FragmentableContentInterface ? [$child] : self::split($child, $emergency, $remaining);
             if (null === $children) {
                 return null;
             }
             foreach ($children as $part) {
+                $remaining ??= 100000;
+                if (--$remaining < 0) {
+                    throw new \LengthException('Inline fragmentation exceeds the box count limit.');
+                }
                 $parts[] = new Box($box->node, $box->display, $style, [$part], null, null, null, $box->pseudoElement);
             }
         }

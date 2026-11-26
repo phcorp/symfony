@@ -219,6 +219,7 @@ final class FacadePresentation
             }
             $styles = $snapshot['styles'];
             $providers = new \SplObjectStorage();
+            $usedStyles = clone $this->usedStyles;
             /** @var \SplObjectStorage<\Dom\Element, array<array-key, mixed>> $states */
             $states = new \SplObjectStorage();
             foreach ($projection['owners'] as $element) {
@@ -261,13 +262,22 @@ final class FacadePresentation
 
                         return $lines;
                     }, $this->metrics->cellWidth);
-                    $this->inlineImageProviders[$element] = [$key, $providers[$element]];
+                    $projection['groups'][$element] = [];
+                    $groupingEligible = $this->canGroupInlineImage($element, $styles[$element] ?? [], $snapshot['resolver']);
+                    $atomic = $providers[$element];
+                    $lazy = null;
+                    if ($groupingEligible) {
+                        $lazy = null !== $cached && $cached[0] === $key && ($cached[3] ?? false) ? $cached[2] : new \Symfony\Bridge\TuiHtml\Content\FragmentableInlineImage($atomic, mb_strlen($tokens), $this->metrics->cellWidth, $this->metrics->cellHeight);
+                        $providers[$element] = $lazy;
+                        $usedStyles[$element] = array_replace($usedStyles[$element] ?? [], ['' => array_replace(($usedStyles[$element] ?? [])[''] ?? [], ['max-width' => 'none'])]);
+                    }
+                    $this->inlineImageProviders[$element] = [$key, $atomic, $lazy, $groupingEligible];
                     continue;
                 }
                 if ($widget instanceof TabsWidget) {
-                    $providers[$element] = $this->tabAdapters[] = new TabsContentAdapter($widget, $style, $this->metrics, $context->getFontRegistry(), $media, function (AbstractWidget $body, $inner) use ($snapshot, $projection, $providers, &$states, $constraints, $media, $cell, $rows): array {
+                    $providers[$element] = $this->tabAdapters[] = new TabsContentAdapter($widget, $style, $this->metrics, $context->getFontRegistry(), $media, function (AbstractWidget $body, $inner) use ($snapshot, $projection, $providers, &$states, $constraints, $media, $cell, $rows, $usedStyles): array {
                         $node = $snapshot['nodes'][$body];
-                        $box = new BoxBuilder($snapshot['styles'], $snapshot['resolver'], $this->resources, $states, static fn (\Dom\Element $node) => $providers[$node] ?? null, $projection['groups'], $this->usedStyles)->build($node);
+                        $box = new BoxBuilder($snapshot['styles'], $snapshot['resolver'], $this->resources, $states, static fn (\Dom\Element $node) => $providers[$node] ?? null, $projection['groups'], $usedStyles)->build($node);
                         $fragment = new LayoutEngine($this->metrics, $constraints, TerminalColorPalette::get(), $media->colorScheme->value, null, TerminalColorPalette::lookupStandardName(...), $this->resources)->layout($box, $inner->getColumns() * $cell->width, $inner->getRows() * $cell->height);
                         $display = new Painter($this->metrics, null, $constraints)->paint($fragment);
                         $result = new RenderingResult($snapshot['document'], $snapshot['styles'], $fragment, $display, $this->metrics, null, $constraints);
@@ -310,7 +320,7 @@ final class FacadePresentation
                     $states[$node] = array_replace($states[$node] ?? [], ['anchor' => $snapshot['nodes'][$anchor]]);
                 }
             }
-            $box = new BoxBuilder($styles, $snapshot['resolver'], $this->resources, $states, static fn (\Dom\Element $element) => $providers[$element] ?? null, $projection['groups'], $this->usedStyles)->build($projection['root']);
+            $box = new BoxBuilder($styles, $snapshot['resolver'], $this->resources, $states, static fn (\Dom\Element $element) => $providers[$element] ?? null, $projection['groups'], $usedStyles)->build($projection['root']);
             $fragment = new LayoutEngine($this->metrics, $constraints, TerminalColorPalette::get(), $media->colorScheme->value, null, TerminalColorPalette::lookupStandardName(...), $this->resources)->layout($box, $columns * $cell->width, $rows * $cell->height);
             $display = new Painter($this->metrics, null, $constraints)->paint($fragment);
             $this->result = new RenderingResult($snapshot['document'], $styles, $fragment, $display, $this->metrics, null, $constraints);
@@ -707,6 +717,40 @@ final class FacadePresentation
     private function colorToken(Color $color): string
     {
         return $color->toForegroundCode() === Color::named('default')->toForegroundCode() ? ('default' === $this->defaultForeground ? 'default' : $this->defaultForeground) : $color->toHex();
+    }
+
+    private function canGroupInlineImage(\Dom\Element $element, array $style, \Symfony\Component\HtmlRenderer\Css\StyleResolver $resolver): bool
+    {
+        if (!isset($this->preparedInlineImages[$element]) || !\in_array($style['white-space'] ?? 'normal', ['normal', 'pre-line'], true) || !\in_array($style['overflow-wrap'] ?? 'normal', ['anywhere', 'break-word'], true) && 'break-all' !== ($style['word-break'] ?? 'normal')) {
+            return false;
+        }
+        $record = $resolver->getCascadeRecord($element);
+        $cap = $record['declarations']['max-width'] ?? [];
+        if (!($cap['valid'] ?? false) || 'user-agent' !== ($cap['origin'] ?? null) || '100%' !== ($cap['value'] ?? null) || ($cap['important'] ?? false) || ($cap['order'][0] ?? null) !== \PHP_INT_MAX || ($cap['priority'][5] ?? null) !== \PHP_INT_MAX - 1) {
+            return false;
+        }
+        $properties = ['display', 'width', 'height', 'min-width', 'max-width', 'min-height', 'max-height', 'inline-size', 'block-size', 'min-inline-size', 'max-inline-size', 'min-block-size', 'max-block-size', 'aspect-ratio', 'position', 'float', 'vertical-align', 'transform'];
+        foreach ($properties as $property) {
+            if (isset($record['animated'][$property]) || \array_key_exists($property, ($this->usedStyles[$element] ?? [])[''] ?? [])) {
+                return false;
+            }
+            if ('max-width' !== $property && ($record['declarations'][$property]['valid'] ?? false)) {
+                return false;
+            }
+        }
+        if (!\in_array($style['background-color'] ?? 'transparent', ['transparent', 'none'], true) || 'none' !== ($style['background-image'] ?? 'none') || 'visible' !== ($style['visibility'] ?? 'visible') || 'ltr' !== ($style['direction'] ?? 'ltr')) {
+            return false;
+        }
+        if (!\in_array($style['outline-style'] ?? 'none', ['none', 'hidden'], true) && !\in_array($style['outline-width'] ?? 'medium', ['0', '0px'], true)) {
+            return false;
+        }
+        foreach (['before', 'after'] as $role) {
+            if (!\in_array($resolver->getPseudoStyle($element, $role)['content'] ?? 'none', ['none', 'normal'], true)) {
+                return false;
+            }
+        }
+
+        return null !== \Symfony\Component\HtmlRenderer\Layout\InlineFormatting::split(new \Symfony\Component\HtmlRenderer\Layout\Box($element, 'inline', $style, [], 'x'));
     }
 
     private function supportsOwnStyle(AbstractWidget $widget): bool
